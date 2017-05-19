@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>13</zoom_level>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>247</x>
+      <y>182</y>
+      <w>1833</w>
+      <h>1443</h>
+    </coordinates>
+    <panel_attributes>MIDIUSB::Root
+--
+MIDI_USB_START_REQ/ ^MIDI_USB_START_CFM(ERROR)
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>923</x>
+      <y>377</y>
+      <w>481</w>
+      <h>195</h>
+    </coordinates>
+    <panel_attributes>Stopped
+--
+MIDI_USB_STOP_REQ/
+MIDI_USB_STOP_CFM(SUCCESS)
+
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>1079</x>
+      <y>325</y>
+      <w>26</w>
+      <h>26</h>
+    </coordinates>
+    <panel_attributes>type=initial</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1092</x>
+      <y>325</y>
+      <w>91</w>
+      <h>78</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;&gt;&gt;</panel_attributes>
+    <additional_attributes>10.0;10.0;50.0;10.0;50.0;40.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>377</x>
+      <y>637</y>
+      <w>1625</w>
+      <h>910</h>
+    </coordinates>
+    <panel_attributes>Started
+--
+entry / USB_SetHandler(USB_handler);
+
+MIDI_USB_DATA_READY /
+        while midi events in buffer:
+            ^event corresponding to parsed data. One of:
+            ^NOTE_OFF_REQ,
+            ^NOTE_ON_REQ,
+            ^CONTROL_CHANGE_REQ,
+            ^PITCH_BEND_REQ
+
+
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1391</x>
+      <y>468</y>
+      <w>286</w>
+      <h>195</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;&gt;&gt;</panel_attributes>
+    <additional_attributes>200.0;130.0;200.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>663</x>
+      <y>455</y>
+      <w>286</w>
+      <h>208</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;&gt;&gt;</panel_attributes>
+    <additional_attributes>200.0;10.0;10.0;10.0;10.0;140.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1456</x>
+      <y>390</y>
+      <w>598</w>
+      <h>117</h>
+    </coordinates>
+    <panel_attributes>MIDI_USB_STOP_REQ
+/ ^MIDI_USB_STOP_CFM(SUCCESS)
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>403</x>
+      <y>390</y>
+      <w>598</w>
+      <h>117</h>
+    </coordinates>
+    <panel_attributes>MIDI_UART_START_REQ
+/ ^MIDI_UART_START_CFM(SUCCESS)
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>

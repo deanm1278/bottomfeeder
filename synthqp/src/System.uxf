@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>11</zoom_level>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>0</x>
+      <y>0</y>
+      <w>1804</w>
+      <h>1397</h>
+    </coordinates>
+    <panel_attributes>System::Root
+--
+SYSTEM_START_REQ/ ^SYSTEM_START_CFM(ERROR)
+
+
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>517</x>
+      <y>110</y>
+      <w>451</w>
+      <h>99</h>
+    </coordinates>
+    <panel_attributes>Stopped
+--
+SYSTEM_STOP_REQ/ ^SYSTEM_STOP_CFM(SUCCESS)
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>671</x>
+      <y>66</y>
+      <w>88</w>
+      <h>66</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;&gt;&gt;</panel_attributes>
+    <additional_attributes>10.0;10.0;60.0;10.0;60.0;40.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>660</x>
+      <y>66</y>
+      <w>22</w>
+      <h>22</h>
+    </coordinates>
+    <panel_attributes>type=initial</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>308</x>
+      <y>143</y>
+      <w>231</w>
+      <h>154</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;120.0;10.0;10.0;190.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>220</x>
+      <y>110</y>
+      <w>253</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>SYSTEM_START_REQ
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>66</x>
+      <y>275</y>
+      <w>924</w>
+      <h>396</h>
+    </coordinates>
+    <panel_attributes>Starting
+--
+entry/ m_cfmCount = 0,
+      ^FPGA_START_REQ
+      ^SD_START_REQ
+      ^MIDI_UART_START_REQ,
+      ^FLASH_CONFIG_START_REQ,
+      ^MIDI_USB_START_REQ,
+      ^CAP_TOUCH_START_REQ,
+      ^SYNTH_START_REQ 
+exit/
+
+XXX_START_CFM
+/ if (SUCCESS)
+    if (++cfmCount == 7) ^DONE
+  else ^FAIL  
+     
+    
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>66</x>
+      <y>737</y>
+      <w>913</w>
+      <h>220</h>
+    </coordinates>
+    <panel_attributes>Started
+--
+entry/ start testTimer
+exit/ stop testTimer
+
+SYSTEM_TEST_TIMER/
+	^USER_LED_TOGGLE_REQ
+
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>517</x>
+      <y>660</y>
+      <w>33</w>
+      <h>99</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;70.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>550</x>
+      <y>693</y>
+      <w>253</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>SYSTEM_DONE
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>1045</x>
+      <y>275</y>
+      <w>693</w>
+      <h>396</h>
+    </coordinates>
+    <panel_attributes>Stopping
+--
+entry/ m_cfmCount = 0,
+      ^FPGA_STOP_REQ
+      ^SD_STOP_REQ
+      ^MIDI_UART_STOP_REQ,
+      ^FLASH_CONFIG_STOP_REQ,
+      ^MIDI_USB_STOP_REQ,
+      ^CAP_TOUCH_STOP_REQ,
+      ^SYNTH_STOP_REQ 
+exit/
+
+XXX_STOP_CFM
+/ if (SUCCESS)
+    if (++cfmCount == 7) ^DONE
+  else ^FAIL   
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>55</x>
+      <y>1056</y>
+      <w>913</w>
+      <h>264</h>
+    </coordinates>
+    <panel_attributes>WriteFrimware
+--
+entry/ ^FPGA_STOP_REQ
+       ^MIDI_UART_STOP_REQ
+       ^CAP_TOUCH_STOP_REQ
+       ^SYNTH_STOP_REQ
+       ^MIDI_USB_STOP_REQ
+
+SYSTEM_DONE/
+       ^FLASH_CONFIG_WRITE_CONFIGURATION_REQ(firmware_path)
+
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>506</x>
+      <y>946</y>
+      <w>33</w>
+      <h>132</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;100.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>528</x>
+      <y>990</y>
+      <w>374</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>SYSTEM_WRITE_FIRMWARE_REQ
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>957</x>
+      <y>660</y>
+      <w>539</w>
+      <h>539</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>470.0;10.0;470.0;470.0;10.0;470.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1155</x>
+      <y>1144</y>
+      <w>253</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>FLASH_CONFIG_WRITE_DONE
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1485</x>
+      <y>110</y>
+      <w>253</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>SYSTEM_STOP_REQ
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>957</x>
+      <y>143</y>
+      <w>308</w>
+      <h>154</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;260.0;10.0;260.0;120.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1452</x>
+      <y>143</y>
+      <w>374</w>
+      <h>154</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;120.0;10.0;10.0;320.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1012</x>
+      <y>110</y>
+      <w>429</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>SYSTEM_DONE/ ^SYSTEM_START_REQ
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>1617</x>
+      <y>1243</y>
+      <w>44</w>
+      <h>44</h>
+    </coordinates>
+    <panel_attributes>type=final</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1628</x>
+      <y>1276</y>
+      <w>33</w>
+      <h>143</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;110.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1474</x>
+      <y>1320</y>
+      <w>253</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>SYSTEM_FAIL
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>

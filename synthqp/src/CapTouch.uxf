@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>13</zoom_level>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>611</x>
+      <y>299</y>
+      <w>429</w>
+      <h>65</h>
+    </coordinates>
+    <panel_attributes>CAP_TOUCH_START_REQ/ ad7147.begin(CT_CS, INT_PIN)
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>559</x>
+      <y>377</y>
+      <w>78</w>
+      <h>78</h>
+    </coordinates>
+    <panel_attributes>type=decision</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>455</x>
+      <y>364</y>
+      <w>156</w>
+      <h>39</h>
+    </coordinates>
+    <panel_attributes>[false]
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>416</x>
+      <y>403</y>
+      <w>169</w>
+      <h>39</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;110.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>377</x>
+      <y>390</y>
+      <w>52</w>
+      <h>52</h>
+    </coordinates>
+    <panel_attributes>type=final</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>208</x>
+      <y>130</y>
+      <w>2171</w>
+      <h>1469</h>
+    </coordinates>
+    <panel_attributes>CapTouch::Root
+--
+CAP_TOUCH_START_REQ/ ^CAP_TOUCH_START_CFM(ERROR)
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>624</x>
+      <y>403</y>
+      <w>364</w>
+      <h>39</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;260.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>585</x>
+      <y>442</y>
+      <w>39</w>
+      <h>182</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;120.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>598</x>
+      <y>494</y>
+      <w>351</w>
+      <h>65</h>
+    </coordinates>
+    <panel_attributes>[true]
+^CAP_TOUCH_START_CFM
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>962</x>
+      <y>351</y>
+      <w>468</w>
+      <h>182</h>
+    </coordinates>
+    <panel_attributes>Stopped
+--
+entry/ ad7147.shutdown()
+
+CAP_TOUCH_STOP_REQ 
+/ ^CAP_TOUCH_STOP_CFM(SUCCESS)
+
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1508</x>
+      <y>429</y>
+      <w>598</w>
+      <h>117</h>
+    </coordinates>
+    <panel_attributes>CAP_TOUCH_STOP_REQ
+/ ^CAP_TOUCH_STOP_CFM(SUCCESS)
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1417</x>
+      <y>403</y>
+      <w>91</w>
+      <h>221</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;50.0;10.0;50.0;150.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>299</x>
+      <y>598</y>
+      <w>2002</w>
+      <h>910</h>
+    </coordinates>
+    <panel_attributes>Started
+--
+entry/
+exit/
+
+CAP_TOUCH_TOUCHED/
+        read ad7147,
+        compare last read to this read
+        for all pads:
+            if( no longer touched ):
+                ^NOTE_OFF_REQ(channel, keyboardOffset + pad_ix, 0)
+            else if( newly touched ):
+                ^NOTE_ON_REQ(channel, keyboardOffset + pad_ix, velocity)
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>

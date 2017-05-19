@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>14</zoom_level>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>826</x>
+      <y>224</y>
+      <w>518</w>
+      <h>210</h>
+    </coordinates>
+    <panel_attributes>Stopped
+--
+SD_STOP_REQ/
+SD_STOP_CFM(SUCCESS)
+
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>994</x>
+      <y>168</y>
+      <w>28</w>
+      <h>28</h>
+    </coordinates>
+    <panel_attributes>type=initial</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1008</x>
+      <y>168</y>
+      <w>98</w>
+      <h>84</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;&gt;&gt;</panel_attributes>
+    <additional_attributes>10.0;10.0;50.0;10.0;50.0;40.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>98</x>
+      <y>14</y>
+      <w>1974</w>
+      <h>1554</h>
+    </coordinates>
+    <panel_attributes>SDCard::Root
+--
+SD_START_REQ/ SD_START_CFM(ERROR)
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1330</x>
+      <y>322</y>
+      <w>308</w>
+      <h>210</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;&gt;&gt;</panel_attributes>
+    <additional_attributes>200.0;130.0;200.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>238</x>
+      <y>504</y>
+      <w>1750</w>
+      <h>980</h>
+    </coordinates>
+    <panel_attributes>Started
+--
+entry /
+
+SD_READ_FILE_REQ /
+        while(bytes_read &lt; requested_bytes &amp;&amp; !eof):
+          QF_CRIT_ENTRY()
+          
+          Q_ASSERT( requested file can be opened )
+          seek to reqested position in file
+          read CHUNK_SIZE bytes into passed buffer from file while available
+          
+          QF_CRIT_EXIT()
+          set eof flag if file is eof
+
+          ^SD_READ_FILE_RESPONSE(seq, req.getFilename(), eof, exit_pos, bytes_read, req.getBuf())
+        
+
+SD_WRITE_FILE_REQ /
+        write specified number of bytes from buffer pointed to
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>462</x>
+      <y>294</y>
+      <w>392</w>
+      <h>42</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;260.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>392</x>
+      <y>266</y>
+      <w>84</w>
+      <h>84</h>
+    </coordinates>
+    <panel_attributes>type=decision</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>238</x>
+      <y>294</y>
+      <w>182</w>
+      <h>42</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;110.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>196</x>
+      <y>280</y>
+      <w>56</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>type=final</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>280</x>
+      <y>252</y>
+      <w>112</w>
+      <h>42</h>
+    </coordinates>
+    <panel_attributes>[false]
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>434</x>
+      <y>392</y>
+      <w>322</w>
+      <h>84</h>
+    </coordinates>
+    <panel_attributes>[true]
+^SD_START_CFM
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>420</x>
+      <y>336</y>
+      <w>42</w>
+      <h>196</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;120.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1470</x>
+      <y>252</y>
+      <w>462</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>SD_STOP_REQ/ ^SD_STOP_CFM(SUCCESS)
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>476</x>
+      <y>252</y>
+      <w>462</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>SD_START_REQ/ SD.begin()
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>
