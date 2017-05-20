@@ -613,6 +613,7 @@ void MIDI_Class::publish_midi_event(){
 		// Notes
 		case NoteOff:{
 			evt = new noteOffReq(mMessage.channel, mMessage.data1, mMessage.data2);
+			QF::PUBLISH(evt, me);
 			break;
 		}
 		case NoteOn:{
@@ -620,14 +621,18 @@ void MIDI_Class::publish_midi_event(){
 				evt = new noteOffReq(mMessage.channel, mMessage.data1, mMessage.data2);
 			else
 				evt = new noteOnReq(mMessage.channel,mMessage.data1,mMessage.data2);
+			
+			QF::PUBLISH(evt, me);
 			break;
 		}
 		case ControlChange: {
 			evt = new controlChangeReq(mMessage.channel, mMessage.data1, mMessage.data2);
+			QF::PUBLISH(evt, me);
 			break;
 		}
 		case PitchBend: {
-			evt = new pitchBendReq(mMessage.channel,(int)((mMessage.data1 & 0x7F) | ((mMessage.data2 & 0x7F)<< 7)) - 8192); // TODO: check this
+			evt = new pitchBendReq(mMessage.channel,(int)((mMessage.data1 & 0x7F) | ((mMessage.data2 & 0x7F)<< 7)) - 8192);
+			QF::PUBLISH(evt, me);
 			break;
 		}
 		
@@ -658,7 +663,6 @@ void MIDI_Class::publish_midi_event(){
 		default:
 		break;
 	}
-	QF::PUBLISH(evt, me);
 }
 
 

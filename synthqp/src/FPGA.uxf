@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>11</zoom_level>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>44</x>
+      <y>484</y>
+      <w>1727</w>
+      <h>1221</h>
+    </coordinates>
+    <panel_attributes>FPGA::Root
+--
+FPGA_START_REQ/ ^FPGA_START_CFM(ERROR)
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>616</x>
+      <y>649</y>
+      <w>407</w>
+      <h>165</h>
+    </coordinates>
+    <panel_attributes>Stopped
+--
+FPGA_STOP_REQ/
+FPGA_STOP_CFM(SUCCESS)
+
+entry/ digitalWrite(CRESET_B, LOW)
+
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>748</x>
+      <y>605</y>
+      <w>22</w>
+      <h>22</h>
+    </coordinates>
+    <panel_attributes>type=initial</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>759</x>
+      <y>605</y>
+      <w>77</w>
+      <h>66</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;&gt;&gt;</panel_attributes>
+    <additional_attributes>10.0;10.0;50.0;10.0;50.0;40.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>154</x>
+      <y>869</y>
+      <w>1518</w>
+      <h>770</h>
+    </coordinates>
+    <panel_attributes>Started
+--
+entry / writeReg(FPGA_PWM0, 4095),
+           writeReg(FPGA_PWM2, 3000)
+
+FPGA_WRITE_PWM/ writeReg(req.getPwmNumber() + FPGA_PWM0, req.getValue())
+
+FPGA_WRITE_FS/ writeReg(FPGA_W0_FREQ + req.getChannel(), req.getFs())
+
+FPGA_WRITE_PARAM_REQ/ writeReg(FPGA_A_INTERVAL + req.getParam(), req.getValue())
+
+FPGA_NOTIFY_KEY_PRESSED/ writeReg(FPGA_KEY_PRESSED, req.getPressed())
+
+FPGA_SET_PORTAMENTO_REQ/ writeReg(FPGA_PORT, req.getPrescale())
+
+FPGA_SET_ENABLE_REQ/ writeReg(FPGA_ENABLE, req.getEnable())
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1012</x>
+      <y>726</y>
+      <w>242</w>
+      <h>165</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;&gt;&gt;</panel_attributes>
+    <additional_attributes>200.0;130.0;200.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1067</x>
+      <y>660</y>
+      <w>506</w>
+      <h>99</h>
+    </coordinates>
+    <panel_attributes>FPGA_STOP_REQ
+/ ^FPGA_STOP_CFM(SUCCESS)
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>330</x>
+      <y>704</y>
+      <w>308</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;260.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1353</x>
+      <y>1177</y>
+      <w>363</w>
+      <h>99</h>
+    </coordinates>
+    <panel_attributes>SD_READ_FILE_RESPONSE
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>275</x>
+      <y>682</y>
+      <w>66</w>
+      <h>66</h>
+    </coordinates>
+    <panel_attributes>type=decision</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>121</x>
+      <y>704</y>
+      <w>176</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;140.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>88</x>
+      <y>693</y>
+      <w>44</w>
+      <h>44</h>
+    </coordinates>
+    <panel_attributes>type=final</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>297</x>
+      <y>737</y>
+      <w>33</w>
+      <h>154</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;120.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>319</x>
+      <y>759</y>
+      <w>253</w>
+      <h>66</h>
+    </coordinates>
+    <panel_attributes>[CDONE HIGH]
+^FPGA_START_CFM
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>649</x>
+      <y>1276</y>
+      <w>957</w>
+      <h>319</h>
+    </coordinates>
+    <panel_attributes>WritingWave
+--
+entry/
+exit/ recall(&amp;m_deferQueue)
+
+FPGA_WRITE_WAVE_FILE/ defer(&amp;m_deferQueue)
+
+SD_READ_FILE_RESPONSE/ write data to fpga RAM
+
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>143</x>
+      <y>1430</y>
+      <w>528</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>460.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>176</x>
+      <y>1342</y>
+      <w>550</w>
+      <h>99</h>
+    </coordinates>
+    <panel_attributes>FPGA_WRITE_WAVE_FILE/
+^SD_READ_FILE_REQ(0, req.getFilename(), 0, SD_READ_MAX, &amp;SDBuffer)
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>1309</x>
+      <y>1067</y>
+      <w>66</w>
+      <h>66</h>
+    </coordinates>
+    <panel_attributes>type=decision</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1331</x>
+      <y>1122</y>
+      <w>33</w>
+      <h>176</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;140.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1331</x>
+      <y>891</y>
+      <w>33</w>
+      <h>198</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;160.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1210</x>
+      <y>1089</y>
+      <w>121</w>
+      <h>209</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;170.0;10.0;10.0;90.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>341</x>
+      <y>605</y>
+      <w>363</w>
+      <h>99</h>
+    </coordinates>
+    <panel_attributes>FPGA_START_REQ/ digitalWrite(CRESET_B, HIGH)
+digitalRead(CDONE)
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>132</x>
+      <y>660</y>
+      <w>176</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>[CDONE LOW]
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1364</x>
+      <y>1001</y>
+      <w>242</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>[req.getEof() == TRUE]
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>979</x>
+      <y>1166</y>
+      <w>297</w>
+      <h>66</h>
+    </coordinates>
+    <panel_attributes>[req.getEof() == FALSE]/
+^SD_READ_FILE_REQ()
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>

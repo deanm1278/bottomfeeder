@@ -141,6 +141,9 @@ QState FPGA::Started(FPGA * const me, QEvt const * const e) {
 			me->writeReg(FPGA_PWM0, 4095);
 			me->writeReg(FPGA_PWM2, 3000);
 			
+			//REMOVE ME
+			me->writeReg(FPGA_SUS_LEVEL, 3000);
+			
 			status = Q_HANDLED();
 			break;
 		}

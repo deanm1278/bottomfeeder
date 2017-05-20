@@ -80,6 +80,8 @@ private:
 	
 	void cc_LFO_rate(byte channel, byte value, struct CC_ARG *args);
 	void cc_LFO_depth(byte channel, byte value, struct CC_ARG *args);
+	void cc_LFO_wave(byte channel, byte value, struct CC_ARG *args);
+	void cc_LFO_target(byte channel, byte value, struct CC_ARG *args);
 	void cc_cv(byte channel, byte value, struct CC_ARG *args);
 	void cc_tune(byte channel, byte value, struct CC_ARG *args);
 	void cc_transpose(byte channel, byte value, struct CC_ARG *args);

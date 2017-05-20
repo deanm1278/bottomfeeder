@@ -6,34 +6,34 @@
 
 module WAVETABLE(
   input		clk,
-  input         [`DATAWIDTH-1:0] Fs,
-  input         [2:0] step,
-  input			RUNNING,
+  input         [`DATAWIDTH-1:0] Fs_input,
+  input         [2:0] step_input,
+  input			enable,
   input         sub_en,
   output 	reg [`ADDRWIDTH-1:0] 	RADDR, //wavetable position (8 bit)
   output	reg [1:0]	rbank,
   input		[`DATAWIDTH-1:0] RDATA,		//value read from the ram
   output	reg RCLK,
   output	    [`DATAWIDTH-1:0] dout,
-  output        SUB_OUT,
-  input         EXT_READ,
-  input         EXT_READ_ENABLE
+  output        SUB_OUT
 );
   
   wire fire;
-  reg [`ADDRWIDTH-1:0] cnt = 8'b0;
+  reg [`ADDRWIDTH:0] cnt = 9'b0;
   reg [15:0] dlatch = 16'h0;
   
-  wire enable = (Fs != 13'b0 && RUNNING);
+  reg [15:0] Fs = 16'h0;
+  reg [2:0] step = 3'b0;
   
   reg SUB_STATE = 1'b0;
-
-  reg [1:0] EXT_READr;  always @(posedge clk) EXT_READr <= {EXT_READr[0], EXT_READ};
-  wire ext_read_rising = (EXT_READr[1:0] == 2'b01);
+  
+  reg [2:0] enabler = 3'b111;  always @(posedge clk) enabler <= {enabler[1:0], enable};
+  //detect enable rising edge
+  wire      enable_rising = (enabler[2:1]==2'b01);
   
   //shift reg so we can assert write when all our data has settled
   reg [2:0] shft = 3'b0;
-  always @(posedge clk) shft <= {shft[1:0], (fire && enable) || (EXT_READ_ENABLE && ext_read_rising)};
+  always @(posedge clk) shft <= {shft[1:0], (fire && enable)};
   wire dataRdy = (shft[2:1]==2'b10);
   
   //timer for the sample rate
@@ -42,20 +42,29 @@ module WAVETABLE(
   //increment the read position and bank if necessary
   always @(posedge clk)
     begin
-      if(~enable && ~EXT_READ_ENABLE) 
+      if(~enable) 
         begin
           RADDR <= 0;
           rbank <= 0;
           cnt <= 0;
         end
+	  //write Fs and step on rising edge of enable
+	  if(enable_rising) begin
+		  Fs <= Fs_input;
+		  step <= step_input;
+	  end
       else if(dataRdy)
         begin
-          if(enable) dlatch <= RDATA;
+          dlatch <= RDATA;
 
           if( cnt == (8'hFF >> step) )begin
             rbank <= rbank + 1'b1;
             cnt <= 0;
             RADDR <= 0;
+			
+			//if a wave is already running, only latch in the new Fs and step on a known even bank
+			Fs <= Fs_input;
+			step <= step_input;
             if(rbank == 2'b11) SUB_STATE <= ~SUB_STATE;
           end else begin
             cnt <= cnt + 1'b1;
@@ -67,8 +76,8 @@ module WAVETABLE(
   //set latches
   always @(posedge clk)
     begin
-      if(~enable && ~EXT_READ_ENABLE) RCLK <= 1'b0;
-      else RCLK <= fire || (EXT_READ_ENABLE && ext_read_rising);
+      if(~enable) RCLK <= 1'b0;
+      else RCLK <= fire;
     end
 	
 	assign SUB_OUT = (sub_en == 1'b1 && enable ? SUB_STATE : 1'bz);
@@ -337,14 +346,8 @@ module DINTERP(
         if(DATA[30]) begin //if this bit is set we are writing a waveform
 			wbank <= DATA[25:24]; //set bank
 			WADDR <= DATA[23:16]; //set address
-			if(DATA[31]) begin //we are writing
-			  RE <= 0;
-			  WE <= (1 << DATA[29:26]);
-			end
-			else begin //we are reading
-			  RE <= DATA[29:26];
-			  WE <= 0;
-			end
+			RE <= 0;
+			WE <= (1 << DATA[29:26]);
 			RDATA <= DATA[15:0]; //set the data
         end
 		else begin //this is a register

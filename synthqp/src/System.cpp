@@ -327,36 +327,26 @@ QState System::Started(System * const me, QEvt const * const e) {
 			
 			//************* OSCILLATORS **********//
 			Evt *evt;
-			evt = new FPGAWriteWaveFile("perf_0.w", 0, 12000);
+			evt = new FPGAWriteWaveFile("epiano_0.w", 0, 12000);
 			QF::PUBLISH(evt, me);
 			
-			evt = new FPGAWriteWaveFile("perf_0.w", 1, 12000);
+			evt = new FPGAWriteWaveFile("epiano_0.w", 1, 12000);
 			QF::PUBLISH(evt, me);
 			
-			evt = new FPGAWriteWaveFile("perf_0.w", 2, 12000);
+			evt = new FPGAWriteWaveFile("epiano_0.w", 2, 12000);
 			QF::PUBLISH(evt, me);
 			
 			//for setting default waves
 			evt = new synthSetCCHandler(26, WT_WAVE, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
-			int osc = 0;
-			evt = new synthSetCCHandler(6, WT_TRANSPOSE, &(reinterpret_cast<byte&>(osc)), sizeof(int));
+			evt = new synthSetCCHandler(6, WT_TRANSPOSE, NULL, 0);
 			QF::PUBLISH(evt, me);
-			evt = new synthSetCCHandler(2, WT_TUNE, &(reinterpret_cast<byte&>(osc)), sizeof(int));
+			evt = new synthSetCCHandler(2, WT_TUNE, NULL, 0);
 			QF::PUBLISH(evt, me);
-			
-			osc = 1;
-			evt = new synthSetCCHandler(17, WT_TRANSPOSE, &(reinterpret_cast<byte&>(osc)), sizeof(int));
-			QF::PUBLISH(evt, me);
-			evt = new synthSetCCHandler(3, WT_TUNE, &(reinterpret_cast<byte&>(osc)), sizeof(int));
+			evt = new synthSetCCHandler(27, WT_VOLUME, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
-			osc = 2;
-			evt = new synthSetCCHandler(8, WT_TRANSPOSE, &(reinterpret_cast<byte&>(osc)), sizeof(int));
-			QF::PUBLISH(evt, me);
-			evt = new synthSetCCHandler(4, WT_TUNE, &(reinterpret_cast<byte&>(osc)), sizeof(int));
-			QF::PUBLISH(evt, me);
 			
 			evt = new synthSetCCHandler(9, GLIDE_TIME, NULL, 0);
 			QF::PUBLISH(evt, me);
@@ -412,33 +402,29 @@ QState System::Started(System * const me, QEvt const * const e) {
 			QF::PUBLISH(evt, me);
 			
 			//**************** LFO *************//
-			int lfo_num = 0;
-			evt = new synthWriteLFOReq(lfo_num, "sin.m");
+			evt = new synthWriteLFOReq(0, "perf_1.w");
 			QF::PUBLISH(evt, me);
 			
-			evt = new synthSetLFOTargetReq(lfo_num, LFO_TARGET_CV, CUTOFF);
+			evt = new synthSetLFOTargetReq(0, LFO_TARGET_CV, CUTOFF);
 			QF::PUBLISH(evt, me);
 			
-			evt = new synthSetCCHandler(22, LFO_RATE, &(reinterpret_cast<byte&>(lfo_num)), sizeof(int));
+			evt = new synthWriteLFOReq(1, "perf_1.w");
 			QF::PUBLISH(evt, me);
 			
-			evt = new synthSetCCHandler(23, LFO_DEPTH, &(reinterpret_cast<byte&>(lfo_num)), sizeof(int));
+			evt = new synthSetLFOTargetReq(1, LFO_TARGET_PITCH, 0);
 			QF::PUBLISH(evt, me);
 			
-			/*
-			lfo_num = 1;
-			evt = new synthWriteLFOReq(lfo_num, "sin.m");
+			evt = new synthSetCCHandler(22, LFO_RATE, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
-			evt = new synthSetLFOTargetReq(lfo_num, LFO_TARGET_RATE, 0);
+			evt = new synthSetCCHandler(23, LFO_DEPTH, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
-			evt = new synthSetCCHandler(18, LFO_RATE, &(reinterpret_cast<byte&>(lfo_num)), sizeof(int));
+			evt = new synthSetCCHandler(28, CC_LFO_TARGET, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
-			evt = new synthSetCCHandler(19, LFO_DEPTH, &(reinterpret_cast<byte&>(lfo_num)), sizeof(int));
+			evt = new synthSetCCHandler(29, LFO_WAVE, NULL, 0);
 			QF::PUBLISH(evt, me);
-			*/
 			
 			//*********************************//
 			

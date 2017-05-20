@@ -35,8 +35,8 @@ module testbench;
   always @(posedge DATA_READY) RDY_FIRED <= ~RDY_FIRED;
 
   initial begin
-	$dumpfile("test.vcd");
-    $dumpvars(0,testbench);
+	//$dumpfile("test.vcd");
+    //$dumpvars(0,testbench);
   
     $display("1..3");
     #100;

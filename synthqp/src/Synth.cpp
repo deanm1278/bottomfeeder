@@ -158,6 +158,18 @@ QState Synth::Started(Synth * const me, QEvt const * const e) {
 			status = Q_TRAN(&Synth::Stopped);
 			break;
 		}
+		case SYNTH_SET_MODE_PARAPHONIC_REQ: {
+			LOG_EVENT(e);
+			
+			status = Q_TRAN(&Synth::Paraphonic);
+			break;
+		}
+		case SYNTH_SET_MODE_MONOPHONIC_REQ: {
+			LOG_EVENT(e);
+			
+			status = Q_TRAN(Synth::Monophonic);
+			break;
+		}
 		case SYNTH_UPDATE_TIMER:{
 			me->flush();
 			
@@ -193,24 +205,29 @@ QState Synth::Started(Synth * const me, QEvt const * const e) {
 			//remove the pointer from the old target
 			LFO *lfo = &me->lfos[req.getNum()];
 			if(lfo->target != NULL){
-				LFO_TARGET *t = lfo->target;
-				for(int i=0; i<NUM_LFO; i++){
-					if(t->lfos[i] == lfo){
-						t->lfos[i] = NULL;
+				//if the target is wave 0, remove from all waves
+				if(lfo->target == &me->waves[0]){
+					for(int i=0; i<NUM_CHANNELS; i++){
+						me->waves[i].lfos[req.getNum()] = NULL;
 					}
 				}
+				else
+					lfo->target->lfos[req.getNum()] = NULL;
 			}
 			
 			//set the new target
 			lfo->targetType = req.getType();
 			switch(req.getType()){
 				case LFO_TARGET_PITCH:{
-					wavetable *w = &me->waves[req.getId()];
-					//scale to 1024 values (-512 to 512)
-					lfo->mapMax = 511;
+					wavetable *w = &me->waves[0];
+					//scale to 512 values (-256 to 256)
+					lfo->mapMax = 255;
 					
 					lfo->target = w;
-					w->lfos[req.getNum()] = lfo;
+					//pitch modulators actually target all waves
+					for(int i=0; i<NUM_CHANNELS; i++){
+						me->waves[i].lfos[req.getNum()] = lfo;
+					}
 					break;
 				}
 				case LFO_TARGET_CV:{
@@ -299,12 +316,6 @@ QState Synth::Monophonic(Synth * const me, QEvt const * const e) {
 			status = Q_HANDLED();
 			break;
 		}
-		case SYNTH_SET_MODE_PARAPHONIC_REQ: {
-			LOG_EVENT(e);
-			
-			status = Q_TRAN(&Synth::Paraphonic);
-			break;
-		} 
 		case CONTROL_CHANGE_REQ:{
 			controlChangeReq const &req = static_cast<controlChangeReq const &>(*e);
 			if(me->cc[req.getCC()] != NULL) (me->*me->cc[req.getCC()])(req.getChannel(), req.getValue(), &me->cc_args[req.getCC()]);
@@ -360,12 +371,6 @@ QState Synth::Paraphonic(Synth * const me, QEvt const * const e) {
 			LOG_EVENT(e);
 			me->noteOffPara(e);
 			status = Q_HANDLED();
-			break;
-		}
-		case SYNTH_SET_MODE_MONOPHONIC_REQ: {
-			LOG_EVENT(e);
-			
-			status = Q_TRAN(Synth::Monophonic);
 			break;
 		}
 		case CONTROL_CHANGE_REQ:{
@@ -432,15 +437,21 @@ QState Synth::WritingLFO(Synth * const me, QEvt const * const e) {
 				
 				signed short val;
 				byte buf[2];
+				int ix = 0;
 				while(!me->SDBuffer.empty()){
 					buf[0] = me->SDBuffer.pop_front();
 					buf[1] = me->SDBuffer.pop_front();
 					
-					uint16_t rawval = ((uint16_t)buf[1] << 8) | (uint16_t)buf[0];
-					val = reinterpret_cast<signed short&>(rawval);
+					if(ix % 4 == 0){
+						
+						//since there are 1024 samples in the .w files, take one out of every 4 bytes to downsample to 256
+						uint16_t rawval = ((uint16_t)buf[1] << 8) | (uint16_t)buf[0];
+						val = reinterpret_cast<signed short&>(rawval);
 					
-					memcpy(me->lfos[me->LFOWritingNum].values + me->writePos, &val, sizeof(signed short));
-					me->writePos++;
+						memcpy(me->lfos[me->LFOWritingNum].values + me->writePos, &val, sizeof(signed short));
+						me->writePos++;
+					}
+					ix++;
 				}
 				
 				if(req.getEof()){
@@ -780,6 +791,14 @@ void Synth::setControlHandler(byte number, ccType_t type, byte *args, int count)
 			/* set a default waveform */
 			cc[number] = &Synth::cc_wave;
 			break;
+		case LFO_WAVE:
+			/* set a default waveform */
+			cc[number] = &Synth::cc_LFO_wave;
+			break;
+		case CC_LFO_TARGET:
+			/* set a default waveform */
+			cc[number] = &Synth::cc_LFO_target;
+			break;
         default:
             //this is not a valid type.
             cc[number] = NULL;
@@ -790,19 +809,97 @@ void Synth::setControlHandler(byte number, ccType_t type, byte *args, int count)
 
 //*********** CC PROCESSOR FUNCTIONS *****************//
 void Synth::cc_LFO_rate(byte channel, byte value, struct CC_ARG *args){
-    //get the arguments. There should be only one integer value
-    struct CC_ARG *a = args;
-    int const &num = static_cast<int const &>(*a->args);
+	Q_ASSERT(channel <= NUM_LFO);
     
-    lfos[num].setRate(map(value, 0, 127, 0, 20 * LFO_NUM_VALUES));
+    lfos[channel - 1].setRate(map(value, 0, 127, 0, 20 * LFO_NUM_VALUES));
 }
 
 void Synth::cc_LFO_depth(byte channel, byte value, struct CC_ARG *args){
-    //get the arguments. There should be only one integer value
-    struct CC_ARG *a = args;
-    int const &num = static_cast<int const &>(*a->args);
+    Q_ASSERT(channel <= NUM_LFO);
 	
-	lfos[num].setDepth(value);
+	lfos[channel - 1].setDepth(value);
+}
+
+void Synth::cc_LFO_wave(byte channel, byte value, struct CC_ARG *args){
+	
+	Q_ASSERT(channel <= NUM_LFO);
+	
+	const char *filename = NULL;
+	switch(value){
+		case 0:
+			break;
+		case SAW:
+			filename = "perf_0.w";
+			break;
+		case SQUARE:
+			filename = "perf_2.w";
+			break;
+		case SINE:
+			filename = "perf_1.w";
+			break;
+		case TRIANGLE:
+			filename = "perf_3.w";
+			break;
+		default:
+			//not a valid default wave
+			Q_ASSERT(0);
+			break;
+	}
+	if(filename != NULL){
+		Evt *evt;
+		evt = new synthWriteLFOReq(channel - 1, filename);
+		this->postLIFO(evt);
+	}
+}
+
+void Synth::cc_LFO_target(byte channel, byte value, struct CC_ARG *args){
+	
+	Q_ASSERT(channel <= NUM_LFO);
+	
+	uint8_t targetType = LFO_TARGET_NONE;
+	uint8_t targetId;
+	
+	switch(value){
+		case 1:
+			targetType = LFO_TARGET_PITCH;
+			targetId = 0;
+			break;
+		case 2:
+			targetType = LFO_TARGET_CV;
+			targetId = CUTOFF;
+			break;
+		case 3:
+			targetType = LFO_TARGET_CV;
+			targetId = AMP;
+			break;
+		case 4:
+			targetType = LFO_TARGET_CV;
+			targetId = RESONANCE;
+			break;
+		case 5:
+			targetType = LFO_TARGET_CV;
+			targetId = NOISE;
+			break;
+		case 6:
+			targetType = LFO_TARGET_CV;
+			targetId = SUB;
+			break;
+		case 7:
+			targetType = LFO_TARGET_RATE;
+			targetId = (channel == 1 ? 1 : 0);
+			break;
+		case 8:
+			targetType = LFO_TARGET_DEPTH;
+			targetId = (channel == 1 ? 1 : 0);
+			break;
+		default:
+			break;
+	}
+	if(targetType != LFO_TARGET_NONE){
+		Evt *evt;
+		evt = new synthSetLFOTargetReq(channel - 1, targetType, targetId);
+		this->postLIFO(evt);
+	}
 }
 
 void Synth::cc_cv(byte channel, byte value, struct CC_ARG *args){
@@ -814,25 +911,19 @@ void Synth::cc_cv(byte channel, byte value, struct CC_ARG *args){
 }
 
 void Synth::cc_tune(byte channel, byte value, struct CC_ARG *args){
-    //get the arguments. There should be only one integer value
-    struct CC_ARG *a = args;
-    int const &num = static_cast<int const &>(*a->args);
+    Q_ASSERT(channel <= NUM_CHANNELS);
     
-	waves[num].setTune(map(value, 0, 127, -50, 50));
+	waves[channel - 1].setTune(map(value, 0, 127, -50, 50));
 }
 
 void Synth::cc_transpose(byte channel, byte value, struct CC_ARG *args){
-    //get the arguments. There should be only one integer value
-    struct CC_ARG *a = args;
-    int const &num = static_cast<int const &>(*a->args);
+    Q_ASSERT(channel <= NUM_CHANNELS);
     
-    waves[num].setTranspose(map(value, 0, 127, -24, 24));
+    waves[channel - 1].setTranspose(map(value, 0, 127, -24, 24));
 }
 
 void Synth::cc_volume(byte channel, byte value, struct CC_ARG *args){
-    //get the arguments. There should be only one integer value
-    struct CC_ARG *a = args;
-    //int channel = (*(int *)a->args);
+    Q_ASSERT(channel <= NUM_CHANNELS);
     
     //setChannelVolume(channel, (float)value/127.);
 }
@@ -882,7 +973,6 @@ void Synth::cc_env(byte channel, byte value, struct CC_ARG *args){
 }
 
 void Synth::cc_wave(byte channel, byte value, struct CC_ARG *args){
-	struct CC_ARG *a = args;
 	
 	Q_ASSERT(channel <= NUM_CHANNELS);
 	
@@ -894,10 +984,10 @@ void Synth::cc_wave(byte channel, byte value, struct CC_ARG *args){
 			filename = "perf_0.w";
 			break;
 		case SQUARE:
-			filename = "perf_1.w";
+			filename = "perf_2.w";
 			break;
 		case SINE:
-			filename = "perf_2.w";
+			filename = "perf_1.w";
 			break;
 		case TRIANGLE:
 			filename = "perf_3.w";

@@ -53,14 +53,16 @@ typedef enum ccType_t{
 	WT_SUB = 0x08,
 	PARA_MODE = 0x09,
 	GLIDE_TIME = 0x0A,
-	ENV = 0x0B
+	ENV = 0x0B,
+	LFO_WAVE = 0x0C,
+	CC_LFO_TARGET = 0x0D
 };
 
 //default waves
 enum {
 	SAW = 1,
-	SINE = 2,
-	SQUARE = 3,
+	SQUARE = 2,
+	SINE = 3,
 	TRIANGLE = 4	
 };
 

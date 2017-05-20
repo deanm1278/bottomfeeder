@@ -180,9 +180,9 @@ output [2:0] SUB_OUT
   always @(posedge clk) begin
   
 	case(RE)
-	8'h00: READ_OUT <= RDATA0;
-	8'h01: READ_OUT <= RDATA1;
-	8'h02: READ_OUT <= RDATA2;
+	//8'h00: READ_OUT <= RDATA0;
+	//8'h01: READ_OUT <= RDATA1;
+	//8'h02: READ_OUT <= RDATA2;
 	8'h03: READ_OUT <= FS0;
 	8'h04: READ_OUT <= FS1;
 	8'h05: READ_OUT <= FS2;
@@ -245,9 +245,9 @@ output [2:0] SUB_OUT
   //************************//
 
   //wavetable module reads table and sends data out to R2R DAC
-  WAVETABLE w0(clkout, FS0[15:3], FS0[2:0], ENV_RUNNING, EN_REG[0], RADDR0, RBANK0, RDATA0, RCLK0, OUT0, SUB_OUT[0], WCLK, RE[0]);
-  WAVETABLE w1(clkout, FS1[15:3], FS1[2:0], ENV_RUNNING, EN_REG[1], RADDR1, RBANK1, RDATA1, RCLK1, OUT1, SUB_OUT[1], WCLK, RE[1]);
-  WAVETABLE w2(clkout, FS2[15:3], FS2[2:0], ENV_RUNNING, EN_REG[2], RADDR2, RBANK2, RDATA2, RCLK2, OUT2, SUB_OUT[2], WCLK, RE[2]);
+  WAVETABLE w0(clkout, FS0[15:3], FS0[2:0], (ENV_RUNNING && FS0 != 16'h0), EN_REG[0], RADDR0, RBANK0, RDATA0, RCLK0, OUT0, SUB_OUT[0]);
+  WAVETABLE w1(clkout, FS1[15:3], FS1[2:0], (ENV_RUNNING && FS1 != 16'h0), EN_REG[1], RADDR1, RBANK1, RDATA1, RCLK1, OUT1, SUB_OUT[1]);
+  WAVETABLE w2(clkout, FS2[15:3], FS2[2:0], (ENV_RUNNING && FS2 != 16'h0), EN_REG[2], RADDR2, RBANK2, RDATA2, RCLK2, OUT2, SUB_OUT[2]);
   
   //ram arbitrators
   RAM_ARB r0 (clkout, WDATA, WE[0], WADDR, WCLK, RADDR0, RCLK0, RDATA0, WBANK, RBANK0);

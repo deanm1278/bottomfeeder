@@ -4,9 +4,8 @@ module testbench;
   reg         [`DATAWIDTH-1:0] Fs = 16'h0;
   reg         [2:0] step = 3'b0;
   reg         sub_en = 0;
+  reg		  enable = 0;
   reg         [`DATAWIDTH-1:0] RDATA = 16'h0;		//value read from the ram
-  reg         EXT_READ = 0;
-  reg         EXT_READ_ENABLE = 0;
 
   wire        [`ADDRWIDTH-1:0] 	RADDR; //wavetable position (8 bit)
   wire        [1:0] rbank;
@@ -19,9 +18,13 @@ module testbench;
   always @(posedge RCLK) RDATA <= RDATA + 1'b1;
 
   initial begin
+    $dumpfile("test.vcd");
+    $dumpvars(0,testbench);
+  
     $display("Wavetable_tb 1..8");
     repeat (3) @(posedge clk); //a few rando cycles
     Fs <= 16'h000F;
+	enable <= 1;
     repeat (15 + 2) @(posedge clk);
     
     if(RDATA == 16'h0) $display("ok 1 - RDATA is correct");
@@ -46,21 +49,27 @@ module testbench;
     else $display("not ok 7 - dout is incorrect: %b", dout);
     if(RADDR == 8'h2) $display("ok 8 - RADDR is correct");
     else $display("not ok 8 - RADDR is incorrect: %b", RADDR);
+	
+	Fs <= 16'h000A;
+	repeat (1000) @(posedge clk);
 
+	step <= 3'b1;
+	
+	repeat (200) @(posedge clk);
+	
     $finish;
   end
 
   WAVETABLE uut (
     .clk(clk),
-    .Fs(Fs),
-    .step(step),
+    .Fs_input(Fs),
+    .step_input(step),
+	.enable(enable),
     .RADDR(RADDR),
     .rbank(rbank),
     .RDATA(RDATA),
     .RCLK(RCLK),
     .dout(dout),
-    .SUB_OUT(SUB_OUT),
-    .EXT_READ(EXT_READ),
-    .EXT_READ_ENABLE(EXT_READ_ENABLE)
+    .SUB_OUT(SUB_OUT)
   );
 endmodule
