@@ -59,6 +59,7 @@ enum {
 	MIDI_UART_STOP_REQ,
 	MIDI_UART_STOP_CFM,
 	MIDI_UART_DATA_READY,
+	MIDI_UART_TIMEOUT,
 	
 	FLASH_CONFIG_START_REQ,
 	FLASH_CONFIG_START_CFM,
@@ -74,6 +75,8 @@ enum {
 	SD_STOP_CFM,
 	SD_READ_FILE_REQ,
 	SD_READ_FILE_RESPONSE,
+	SD_WRITE_FILE_REQ,
+	SD_WRITE_FILE_RESPONSE,
 	
 	FPGA_START_REQ,
 	FPGA_START_CFM,
@@ -86,6 +89,7 @@ enum {
 	FPGA_NOTIFY_KEY_PRESSED,
 	FPGA_SET_PORTAMENTO_REQ,
 	FPGA_SET_ENABLE_REQ,
+	FPGA_WRITE_WAVE_CFM,
 	
 	CAP_TOUCH_START_REQ,
 	CAP_TOUCH_START_CFM,
@@ -104,6 +108,9 @@ enum {
 	SYNTH_SET_LFO_RATE_REQ,
 	SYNTH_SET_MODE_PARAPHONIC_REQ,
 	SYNTH_SET_MODE_MONOPHONIC_REQ,
+	SYNTH_WAVEFORM_TIMER,
+	SYNTH_LOAD_PRESET_REQ,
+	SYNTH_STORE_PRESET_REQ,
 	
 	MIDI_USB_START_REQ,
 	MIDI_USB_START_CFM,
@@ -420,15 +427,17 @@ class SDStopCfm : public ErrorEvt {
 class SDReadFileReq : public Evt {
 public:
    
-    SDReadFileReq(uint16_t seq, const char *filename, uint32_t pos, uint16_t numBytes, buffer *buf) :
-        Evt(SD_READ_FILE_REQ, seq), filename(filename), pos(pos), numBytes(numBytes), buf(buf) {}
+	SDReadFileReq(uint16_t seq, char *fn, uint32_t pos, uint16_t numBytes, buffer *buf) :
+	Evt(SD_READ_FILE_REQ, seq), pos(pos), numBytes(numBytes), buf(buf) {
+		strcpy(filename, fn);
+	}
 			
-	const char *getFilename() const { return filename; }
+	char *getFilename() const { return (char *)filename; }
 	uint32_t getPos() const { return pos; }
 	uint16_t getNumBytes() const { return numBytes; }
 	buffer *getBuf() const { return buf; }
 private:
-    const char *filename;
+    char filename[50];
 	uint32_t pos;
 	uint16_t numBytes;
 	buffer *buf;
@@ -437,20 +446,62 @@ private:
 class SDReadFileResponse : public Evt {
 	public:
 	
-	SDReadFileResponse(uint16_t seq, const char *filename, bool eof, uint32_t exitPos, uint16_t bytesRead, buffer *buf) :
-		Evt(SD_READ_FILE_RESPONSE, seq), filename(filename), eof(eof), exitPos(exitPos), bytesRead(bytesRead), buf(buf) {}
+	SDReadFileResponse(uint16_t seq, char *fn, bool eof, uint32_t exitPos, uint16_t bytesRead, buffer *buf, bool error) :
+	Evt(SD_READ_FILE_RESPONSE, seq), eof(eof), exitPos(exitPos), bytesRead(bytesRead), buf(buf), error(error) {
+		strcpy(filename, fn);
+	}
 	
-	const char *getFilename() const { return filename; }
+	char *getFilename() const { return (char *)filename; }
 	uint32_t getExitPos() const { return exitPos; }
 	uint16_t getBytesRead() const { return bytesRead; }
 	bool getEof() const { return eof; }
 	buffer *getBuf() const { return buf; }
+	bool getError() const { return error; }
 private:
-	const char *filename;
+	char filename[50];
 	bool eof;
 	uint32_t exitPos;
 	uint16_t bytesRead;
 	buffer *buf;
+	bool error;
+};
+
+class SDWriteFileReq : public Evt {
+	public:
+	
+	SDWriteFileReq(uint16_t seq, char *fn, uint32_t pos, uint16_t numBytes, buffer *buf) :
+	Evt(SD_WRITE_FILE_REQ, seq), pos(pos), numBytes(numBytes), buf(buf) {
+		strcpy(filename, fn);
+	}
+	
+	char *getFilename() const { return (char *)filename; }
+	uint32_t getPos() const { return pos; }
+	uint16_t getNumBytes() const { return numBytes; }
+	buffer *getBuf() const { return buf; }
+	private:
+	char filename[50];
+	uint32_t pos;
+	uint16_t numBytes;
+	buffer *buf;
+};
+
+class SDWriteFileResponse : public Evt {
+	public:
+	
+	SDWriteFileResponse(uint16_t seq, char *fn, uint32_t exitPos, buffer *buf, bool error) :
+	Evt(SD_WRITE_FILE_RESPONSE, seq), exitPos(exitPos), buf(buf), error(error) {
+		strcpy(filename, fn);
+	}
+	
+	char *getFilename() const { return (char *)filename; }
+	uint32_t getExitPos() const { return exitPos; }
+	buffer *getBuf() const { return buf; }
+	bool getError() const { return error; }
+	private:
+	char filename[50];
+	uint32_t exitPos;
+	buffer *buf;
+	bool error;
 };
 
 /************ END SD CARD **********/

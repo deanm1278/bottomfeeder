@@ -21,6 +21,7 @@ module WAVETABLE(
   wire fire;
   reg [`ADDRWIDTH:0] cnt = 9'b0;
   reg [15:0] dlatch = 16'h0;
+  reg latch_on = 1'b0;
   
   reg [15:0] Fs = 16'h0;
   reg [2:0] step = 3'b0;
@@ -33,28 +34,25 @@ module WAVETABLE(
   
   //shift reg so we can assert write when all our data has settled
   reg [2:0] shft = 3'b0;
-  always @(posedge clk) shft <= {shft[1:0], (fire && enable)};
+  always @(posedge clk) shft <= {shft[1:0], (fire && latch_on)};
   wire dataRdy = (shft[2:1]==2'b10);
   
   //timer for the sample rate
-  TMR t(clk, Fs, enable, fire);
+  TMR t(clk, Fs, latch_on, fire);
   
   //increment the read position and bank if necessary
   always @(posedge clk)
     begin
-      if(~enable) 
-        begin
-          RADDR <= 0;
-          rbank <= 0;
-          cnt <= 0;
-        end
 	  //write Fs and step on rising edge of enable
 	  if(enable_rising) begin
 		  Fs <= Fs_input;
 		  step <= step_input;
+          RADDR <= 0;
+          rbank <= 0;
+          cnt <= 0;
+		  latch_on <= 1'b1;
 	  end
-      else if(dataRdy)
-        begin
+      else if(dataRdy) begin
           dlatch <= RDATA;
 
           if( cnt == (8'hFF >> step) )begin
@@ -62,10 +60,14 @@ module WAVETABLE(
             cnt <= 0;
             RADDR <= 0;
 			
-			//if a wave is already running, only latch in the new Fs and step on a known even bank
-			Fs <= Fs_input;
-			step <= step_input;
-            if(rbank == 2'b11) SUB_STATE <= ~SUB_STATE;
+            if(rbank == 2'b11) begin
+				SUB_STATE <= ~SUB_STATE;
+				if(~enable) latch_on <= 1'b0;
+				else begin
+					Fs <= Fs_input;
+					step <= step_input;
+				end
+			end
           end else begin
             cnt <= cnt + 1'b1;
             RADDR <= RADDR + (8'b1 << step);
@@ -76,12 +78,12 @@ module WAVETABLE(
   //set latches
   always @(posedge clk)
     begin
-      if(~enable) RCLK <= 1'b0;
+      if(~latch_on) RCLK <= 1'b0;
       else RCLK <= fire;
     end
 	
-	assign SUB_OUT = (sub_en == 1'b1 && enable ? SUB_STATE : 1'bz);
-	assign dout = (enable ? dlatch : 16'h8000);
+	assign SUB_OUT = (sub_en && latch_on ? SUB_STATE : 1'bz);
+	assign dout = (latch_on ? dlatch : 16'h8000);
   
 endmodule
 

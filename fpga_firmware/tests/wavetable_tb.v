@@ -44,6 +44,7 @@ module testbench;
     else $display("not ok 6 - rbank is incorrect: %b", rbank);
 
     repeat (15 + 1) @(posedge clk);
+	enable <= 1'b0;
 
     if(dout == 16'h2) $display("ok 7 - dout is correct");
     else $display("not ok 7 - dout is incorrect: %b", dout);

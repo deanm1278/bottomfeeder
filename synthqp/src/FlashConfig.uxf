@@ -205,7 +205,6 @@ entry/ write_addr = 0
 
 exit/ flash_power_down()
 
-SD_READ_FILE_RESPONSE/ write returned data
 
 valign=top
 </panel_attributes>
@@ -261,15 +260,6 @@ entry/ write_addr = 0
 
 exit/ flash_power_down()
 
-SD_READ_FILE_RESPONSE/
-   if( returned buffer pointer points to our buffer ):
-       read from flash, Q_ASSERT(read data == data placed in SDBuffer)
-       
-       if( !req.getEof ):
-         ^SD_READ_FILE_REQ(r.GetSeq(), req.getFilename(), req.getExitPos(), page_size, &amp;SDBuffer)
-       
-
-
 valign=top
 </panel_attributes>
     <additional_attributes/>
@@ -300,11 +290,12 @@ valign=top
     <id>Text</id>
     <coordinates>
       <x>693</x>
-      <y>833</y>
+      <y>791</y>
       <w>273</w>
-      <h>35</h>
+      <h>77</h>
     </coordinates>
-    <panel_attributes>SD_READ_FILE_RESPONSE
+    <panel_attributes>SD_READ_FILE_RESPONSE/
+write returned data
 style=wordwrap</panel_attributes>
     <additional_attributes/>
   </element>
@@ -347,33 +338,35 @@ style=wordwrap</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1407</x>
-      <y>553</y>
+      <y>651</y>
       <w>21</w>
-      <h>182</h>
+      <h>84</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;240.0;10.0;10.0</additional_attributes>
+    <additional_attributes>10.0;100.0;10.0;10.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
       <x>1204</x>
-      <y>532</y>
+      <y>630</y>
       <w>203</w>
-      <h>203</h>
+      <h>105</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>270.0;10.0;10.0;10.0;10.0;270.0</additional_attributes>
+    <additional_attributes>270.0;10.0;10.0;10.0;10.0;130.0</additional_attributes>
   </element>
   <element>
     <id>Text</id>
     <coordinates>
-      <x>1022</x>
-      <y>623</y>
-      <w>273</w>
-      <h>35</h>
+      <x>966</x>
+      <y>574</y>
+      <w>448</w>
+      <h>56</h>
     </coordinates>
-    <panel_attributes>SD_READ_FILE_RESPONSE
+    <panel_attributes>SD_READ_FILE_RESPONSE/
+   if( returned buffer pointer points to our buffer ):
+       read from flash, Q_ASSERT(read data == data placed in SDBuffer)
 style=wordwrap</panel_attributes>
     <additional_attributes/>
   </element>
@@ -381,7 +374,7 @@ style=wordwrap</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1393</x>
-      <y>518</y>
+      <y>616</y>
       <w>42</w>
       <h>42</h>
     </coordinates>
@@ -394,10 +387,10 @@ style=wordwrap</panel_attributes>
       <x>784</x>
       <y>455</y>
       <w>644</w>
-      <h>77</h>
+      <h>175</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;10.0;900.0;10.0;900.0;90.0</additional_attributes>
+    <additional_attributes>10.0;10.0;900.0;10.0;900.0;230.0</additional_attributes>
   </element>
   <element>
     <id>Text</id>
@@ -415,7 +408,7 @@ style=wordwrap</panel_attributes>
     <id>Text</id>
     <coordinates>
       <x>1428</x>
-      <y>623</y>
+      <y>665</y>
       <w>189</w>
       <h>42</h>
     </coordinates>

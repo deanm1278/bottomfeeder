@@ -143,7 +143,7 @@ QState FlashConfig::Started(FlashConfig * const me, QEvt const * const e) {
 			FlashConfigWriteConfiguration const &req = static_cast<FlashConfigWriteConfiguration const &>(*e);
 			
 			Evt const &r = EVT_CAST(*e);
-			Evt *evt = new SDReadFileReq(r.GetSeq(), req.getFwPath(), 0, SD_READ_MAX, &me->SDBuffer);
+			Evt *evt = new SDReadFileReq(r.GetSeq(), (char *)req.getFwPath(), 0, SD_READ_MAX, &me->SDBuffer);
 			QF::PUBLISH(evt, me);
 			
 			status = Q_TRAN(&FlashConfig::WritingConfiguration);
@@ -154,7 +154,7 @@ QState FlashConfig::Started(FlashConfig * const me, QEvt const * const e) {
 			FlashConfigVerifyConfigurationReq const &req = static_cast<FlashConfigVerifyConfigurationReq const &>(*e);
 			
 			Evt const &r = EVT_CAST(*e);
-			Evt *evt = new SDReadFileReq(r.GetSeq(), req.getFwPath(), 0, SD_READ_MAX, &me->SDBuffer);
+			Evt *evt = new SDReadFileReq(r.GetSeq(), (char *)req.getFwPath(), 0, SD_READ_MAX, &me->SDBuffer);
 			QF::PUBLISH(evt, me);
 			
 			status = Q_TRAN(&FlashConfig::VerifyConfiguration);

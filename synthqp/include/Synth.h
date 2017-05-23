@@ -15,9 +15,6 @@ using namespace QP;
 using namespace FW;
 
 #define NOTE_BUF_MAX	6
-#define NUM_CHANNELS	3
-#define NUM_CV			5
-#define MAX_CC 128
 
 #define SYNTH_TC		TC3
 #define SYNTH_UPDATE_FREQ 200
@@ -40,19 +37,23 @@ class Synth : public QActive {
 	static QState Stopped(Synth * const me, QEvt const * const e);
 	static QState Started(Synth * const me, QEvt const * const e);
 	static QState WritingLFO(Synth * const me, QEvt const * const e);
+	static QState LoadingPreset(Synth * const me, QEvt const * const e);
+	static QState StoringPreset(Synth * const me, QEvt const * const e);
 	
 	static QState Monophonic(Synth * const me, QEvt const * const e);
 	static QState Paraphonic(Synth * const me, QEvt const * const e);
 	
 	enum {
-		EVT_QUEUE_COUNT = 16,
-		DEFER_QUEUE_COUNT = 4
+		EVT_QUEUE_COUNT = 100,
+		DEFER_QUEUE_COUNT = 10
 	};
 	QEvt const *m_evtQueueStor[EVT_QUEUE_COUNT];
 	QEvt const *m_deferQueueStor[DEFER_QUEUE_COUNT];
 	QEQueue m_deferQueue;
 	uint8_t m_id;
 	char const * m_name;
+	
+	QTimeEvt m_waveformTimer;
 	
 private:
 	void flush();
@@ -63,6 +64,8 @@ private:
 	static struct note *notebuf[NOTE_BUF_MAX];
 	int NOTE_COUNT = 0;
 	
+	static struct CC_LOG cc_log[MAX_CC];
+	
 	static wavetable waves[NUM_CHANNELS];
 	static cv cvs[NUM_CV];
 	static LFO lfos[NUM_LFO];
@@ -70,6 +73,9 @@ private:
 	
 	void (Synth::*cc[MAX_CC])(byte channel, byte value, struct CC_ARG *);
 	struct CC_ARG cc_args[MAX_CC];
+	
+	void resetDefaults();
+	void killNotes();
 	
 	void noteOnMono(const QEvt *e);
 	void noteOnPara(const QEvt *e);
@@ -91,11 +97,15 @@ private:
 	void cc_glide(byte channel, byte value, struct CC_ARG *args);
 	void cc_env(byte channel, byte value, struct CC_ARG *args);
 	void cc_wave(byte channel, byte value, struct CC_ARG *args);
+	void cc_dummy(byte channel, byte value, struct CC_ARG *args) {}
+	void cc_load(byte channel, byte value, struct CC_ARG *args);
+	void cc_store(byte channel, byte value, struct CC_ARG *args);
 	
 	int bend = 0;
 	
 	uint8_t LFOWritingNum;
 	uint8_t writePos;
+	uint8_t ccStoreNum;
 	
 };
 

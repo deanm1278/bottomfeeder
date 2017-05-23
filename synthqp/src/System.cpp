@@ -327,16 +327,7 @@ QState System::Started(System * const me, QEvt const * const e) {
 			
 			//************* OSCILLATORS **********//
 			Evt *evt;
-			evt = new FPGAWriteWaveFile("epiano_0.w", 0, 12000);
-			QF::PUBLISH(evt, me);
 			
-			evt = new FPGAWriteWaveFile("epiano_0.w", 1, 12000);
-			QF::PUBLISH(evt, me);
-			
-			evt = new FPGAWriteWaveFile("epiano_0.w", 2, 12000);
-			QF::PUBLISH(evt, me);
-			
-			//for setting default waves
 			evt = new synthSetCCHandler(26, WT_WAVE, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
@@ -346,7 +337,6 @@ QState System::Started(System * const me, QEvt const * const e) {
 			QF::PUBLISH(evt, me);
 			evt = new synthSetCCHandler(27, WT_VOLUME, NULL, 0);
 			QF::PUBLISH(evt, me);
-			
 			
 			evt = new synthSetCCHandler(9, GLIDE_TIME, NULL, 0);
 			QF::PUBLISH(evt, me);
@@ -402,17 +392,6 @@ QState System::Started(System * const me, QEvt const * const e) {
 			QF::PUBLISH(evt, me);
 			
 			//**************** LFO *************//
-			evt = new synthWriteLFOReq(0, "perf_1.w");
-			QF::PUBLISH(evt, me);
-			
-			evt = new synthSetLFOTargetReq(0, LFO_TARGET_CV, CUTOFF);
-			QF::PUBLISH(evt, me);
-			
-			evt = new synthWriteLFOReq(1, "perf_1.w");
-			QF::PUBLISH(evt, me);
-			
-			evt = new synthSetLFOTargetReq(1, LFO_TARGET_PITCH, 0);
-			QF::PUBLISH(evt, me);
 			
 			evt = new synthSetCCHandler(22, LFO_RATE, NULL, 0);
 			QF::PUBLISH(evt, me);
@@ -428,10 +407,26 @@ QState System::Started(System * const me, QEvt const * const e) {
 			
 			//*********************************//
 			
-			
-			evt = new synthSetCCHandler(25, PARA_MODE, NULL, 0);
+			evt = new synthSetCCHandler(PARA_MODE_CC, PARA_MODE, NULL, 0);
 			QF::PUBLISH(evt, me);
-			  
+			
+			//********** PRESETS DO NOT CHANGE!! *************//
+			evt = new synthSetCCHandler(PRESET_LOAD_SELECT_CC, PRESET_LOAD_SELECT, NULL, 0);
+			QF::PUBLISH(evt, me);
+			
+			evt = new synthSetCCHandler(PRESET_LOAD_ENTER_CC, PRESET_LOAD_ENTER, NULL, 0);
+			QF::PUBLISH(evt, me);
+			
+			evt = new synthSetCCHandler(PRESET_STORE_SELECT_CC, PRESET_STORE_SELECT, NULL, 0);
+			QF::PUBLISH(evt, me);
+			
+			evt = new synthSetCCHandler(PRESET_STORE_ENTER_CC, PRESET_STORE_ENTER, NULL, 0);
+			QF::PUBLISH(evt, me);
+			
+			//************* LOAD FIRST PRESET *************//
+			evt = new Evt(SYNTH_LOAD_PRESET_REQ);
+			QF::PUBLISH(evt, me);
+			
             status = Q_HANDLED();
             break;
         }

@@ -152,7 +152,7 @@ protected:
 	uint8_t m_id;
 	char const * m_name;
 	
-	static buffer MIDIBuf;
+	QTimeEvt m_timeout;
 		
 private:
 	

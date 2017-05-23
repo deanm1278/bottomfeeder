@@ -1,24 +1,7 @@
 ﻿/***************************
 
-This is a simple example of how QP framework can be used with the Arduino core.
-The example runs a test timer to print log messages to the uart and flashes the onboard LED
-
-The example only contains one active object (the system object)
-
-Note that this has only been tested on arm m0+
-
-!!!YOU WILL PROBABLY NEED TO MODIFY YOUR GCC SCRIPT FOR THIS TO COMPILE PROPERLY!!!
-
-this file is usually located at:
-C:\Users\xxx\AppData\Local\Arduino15\packages\arduino\hardware\samd\1.6.14\packages\platform.txt
-
-make sure that the compiler.S flags include the mcpu and mthumb
-
-Example:
-compiler.S.flags=-mcpu={build.mcu} -mthumb -c -g -x assembler-with-cpp -MMD
 
 ****************************/
-
 
 #include <Arduino.h>
 
@@ -41,7 +24,7 @@ enum {
     EVT_SIZE_SMALL = 32,
     EVT_SIZE_MEDIUM = 64,
     EVT_SIZE_LARGE = 256,
-    EVT_COUNT_SMALL = 128,
+    EVT_COUNT_SMALL = 256,
     EVT_COUNT_MEDIUM = 16,
     EVT_COUNT_LARGE = 4
 };

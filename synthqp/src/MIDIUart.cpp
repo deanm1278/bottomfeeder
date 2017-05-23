@@ -17,14 +17,10 @@
 #include "qp_extras.h"
 #include "event.h"
 
-#define MIDI_BUF_MAX 256
-static byte midiBuf[MIDI_BUF_MAX];
-buffer MIDI_Class::MIDIBuf(midiBuf, MIDI_BUF_MAX);
-
 /*! \brief Default constructor for MIDI_Class. */
 MIDI_Class::MIDI_Class() :
 QActive((QStateHandler)&MIDI_Class::InitialPseudoState),
-m_id(MIDI_UART), m_name("MIDI_UART") {}
+m_id(MIDI_UART), m_name("MIDI_UART"),m_timeout(this, MIDI_UART_TIMEOUT) {}
 	
 MIDI_Class::~MIDI_Class() {}
 
@@ -52,6 +48,7 @@ QState MIDI_Class::InitialPseudoState(MIDI_Class * const me, QEvt const * const 
 	me->subscribe(MIDI_UART_START_REQ);
 	me->subscribe(MIDI_UART_STOP_REQ);
 	me->subscribe(MIDI_UART_DATA_READY);
+	me->subscribe(MIDI_UART_TIMEOUT);
 	
 	return Q_TRAN(&MIDI_Class::Root);
 }
@@ -141,6 +138,12 @@ QState MIDI_Class::Started(MIDI_Class * const me, QEvt const * const e) {
 			status = Q_HANDLED();
 			break;
 		}
+		case MIDI_UART_TIMEOUT:{
+			me->reset_input_attributes();
+			
+			status = Q_HANDLED();
+			break;
+		}
 		case MIDI_UART_STOP_REQ: {
 			LOG_EVENT(e);
 			Evt const &req = EVT_CAST(*e);
@@ -151,9 +154,10 @@ QState MIDI_Class::Started(MIDI_Class * const me, QEvt const * const e) {
 		}
 		case MIDI_UART_DATA_READY: {
 			//LOG_EVENT(e);
-			while(!MIDIBuf.empty()){
-				me->read();
-			}
+			
+			me->m_timeout.rearm(100);
+			me->read();
+			
 			status = Q_HANDLED();
 			break;
 		}
@@ -186,7 +190,7 @@ bool MIDI_Class::read(const byte inChannel)
 	if (inChannel >= MIDI_CHANNEL_OFF) return false; // MIDI Input disabled.
 	
 	if (parse(inChannel)) {
-		
+		m_timeout.disarm();
 		if (input_filter(inChannel)) {
 			
 			publish_midi_event();
@@ -213,7 +217,7 @@ bool MIDI_Class::parse(byte inChannel)
 		 * Else, add the extracted byte to the pending message, and check validity. When the message is done, store it.
 		 */
 				
-		const byte extracted = MIDIBuf.pop_front();
+		const byte extracted = USE_SERIAL_PORT.read();
 		
 		if (mPendingMessageIndex == 0) { // Start a new pending message
 			mPendingMessage[0] = extracted;
@@ -597,12 +601,8 @@ void MIDI_Class::setInputChannel(const byte Channel)
 }
 
 void MIDI_Class::RxCallback(uint8_t id) {
-	MIDIBuf.push_back(USE_SERIAL_PORT.read());
-	if(!MIDIBuf.empty()){
-		//if this is the first event, send a data ready event
-		Evt *evt = new Evt(MIDI_UART_DATA_READY);
-		QF::PUBLISH(evt, 0);
-	}
+	Evt *evt = new Evt(MIDI_UART_DATA_READY);
+	QF::PUBLISH(evt, 0);
 }
 
 void MIDI_Class::publish_midi_event(){

@@ -109,7 +109,7 @@ QState FPGA::Stopped(FPGA * const me, QEvt const * const e) {
 			
 			digitalWrite(CRESET_B, HIGH);
 			
-			delay(1000);
+			delay(500);
 			
 			if(digitalRead(CDONE)){
 				SPI.begin();
@@ -138,11 +138,9 @@ QState FPGA::Started(FPGA * const me, QEvt const * const e) {
 	switch (e->sig) {
 		case Q_ENTRY_SIG: {
 			LOG_EVENT(e);
-			me->writeReg(FPGA_PWM0, 4095);
-			me->writeReg(FPGA_PWM2, 3000);
 			
-			//REMOVE ME
-			me->writeReg(FPGA_SUS_LEVEL, 3000);
+			//make sure the filter starts up
+			me->writeReg(FPGA_PWM0, 4095);
 			
 			status = Q_HANDLED();
 			break;
@@ -160,8 +158,12 @@ QState FPGA::Started(FPGA * const me, QEvt const * const e) {
 			me->writeVolume = req.getVolume();
 			me->writePos = 0;
 			
+			char path[50];
+			strcpy(path, WAVES_PATH);
+			strcat(path, req.getFilename());
+			
 			Evt const &r = EVT_CAST(*e);
-			Evt *evt = new SDReadFileReq(0, req.getFilename(), 0, SD_READ_MAX, &me->SDBuffer);
+			Evt *evt = new SDReadFileReq(0, path, 0, SD_READ_MAX, &me->SDBuffer);
 			QF::PUBLISH(evt, me);
 			
 			status = Q_TRAN(&FPGA::WritingWave);
@@ -247,7 +249,7 @@ QState FPGA::WritingWave(FPGA * const me, QEvt const * const e) {
 		case Q_EXIT_SIG: {
 			LOG_EVENT(e);
 			//recall any deferred events
-			me->recall(&me->m_deferQueue);
+			while(me->recall(&me->m_deferQueue));
 			
 			status = Q_HANDLED();
 			break;
@@ -265,36 +267,42 @@ QState FPGA::WritingWave(FPGA * const me, QEvt const * const e) {
 			if(req.getBuf() == &me->SDBuffer){
 				//we know this read is for us
 				
-				signed short val;
-				byte buf[2];
-				while(!me->SDBuffer.empty()){
-					buf[0] = me->SDBuffer.pop_front();
-					buf[1] = me->SDBuffer.pop_front();
-
-					uint16_t rawval = ((uint16_t)buf[1] << 8) | (uint16_t)buf[0];
-					
-					val = reinterpret_cast<signed short&>(rawval);
-						
-					//adjust volume and convert to unsigned
-					uint32_t adj = map(val, -32768, 32767, 0 - me->writeVolume, me->writeVolume) + 32768;
-						
-					me->writeWaveSample(me->writeChannel, me->writePos, (uint16_t)adj);
-					me->writePos++;
-				}
-				
-				if(req.getEof()){
-					//Evt *evt = new Evt(FPGA_WRITE_WAVE_DONE);
-					//QF::PUBLISH(evt, me);
-					
+				if(req.getError()){
+					//oh well, lets just keep going it's fine
 					status = Q_TRAN(&FPGA::Started);
 				}
 				else{
-					//request more data
-					Evt const &r = EVT_CAST(*e);
-					Evt *evt = new SDReadFileReq(r.GetSeq(), req.getFilename(), req.getExitPos(), SD_READ_MAX, &me->SDBuffer);
-					QF::PUBLISH(evt, me);
+					signed short val;
+					byte buf[2];
+					while(!me->SDBuffer.empty()){
+						buf[0] = me->SDBuffer.pop_front();
+						buf[1] = me->SDBuffer.pop_front();
+
+						uint16_t rawval = ((uint16_t)buf[1] << 8) | (uint16_t)buf[0];
 					
-					status = Q_HANDLED();
+						val = reinterpret_cast<signed short&>(rawval);
+						
+						//adjust volume and convert to unsigned
+						uint32_t adj = map(val, -32768, 32767, 0 - me->writeVolume, me->writeVolume) + 32768;
+						
+						me->writeWaveSample(me->writeChannel, me->writePos, (uint16_t)adj);
+						me->writePos++;
+					}
+				
+					if(req.getEof()){
+						Evt *evt = new Evt(FPGA_WRITE_WAVE_CFM);
+						QF::PUBLISH(evt, me);
+					
+						status = Q_TRAN(&FPGA::Started);
+					}
+					else{
+						//request more data
+						Evt const &r = EVT_CAST(*e);
+						Evt *evt = new SDReadFileReq(r.GetSeq(), req.getFilename(), req.getExitPos(), SD_READ_MAX, &me->SDBuffer);
+						QF::PUBLISH(evt, me);
+					
+						status = Q_HANDLED();
+					}
 				}
 			}
 			break;

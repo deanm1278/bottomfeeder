@@ -31,6 +31,7 @@ QState SDCard::InitialPseudoState(SDCard * const me, QEvt const * const e) {
 	me->subscribe(SD_STOP_REQ);
 	
 	me->subscribe(SD_READ_FILE_REQ);
+	me->subscribe(SD_WRITE_FILE_REQ);
 	
 	return Q_TRAN(&SDCard::Root);
 }
@@ -135,46 +136,114 @@ QState SDCard::Started(SDCard * const me, QEvt const * const e) {
 		}
 		case SD_READ_FILE_REQ: {
 			//LOG_EVENT(e);
+			
+			//toggle LED to show card activity
+			digitalWrite(13, !digitalRead(13));
+			
 			SdFile datafile;
 			uint16_t bytes_read = 0;
 			uint16_t this_read = 0;
 			uint16_t to_read = 0;
 			bool eof = false;
+			bool error = false;
 			
 			SDReadFileReq const &req = static_cast<SDReadFileReq const &>(*e);
 			
 			uint32_t exit_pos = req.getPos();
 
 			//read bytes in chunks until either end of file or requested number of bytes has been read
-			while(bytes_read < req.getNumBytes() && !eof){
-				QF_CRIT_ENTRY();
+			while(bytes_read < req.getNumBytes() && !eof && !error){
+				//QF_CRIT_ENTRY();
+				QF_INT_DISABLE();
 				
-				Q_ASSERT(datafile.open(req.getFilename()));
+				char fn[50];
+				strcpy(fn, req.getFilename());
 				
-				datafile.seekSet(exit_pos);
-				
-				if(datafile.available()){
-					//don't overshoot the requested number of bytes
-					to_read = (CHUNK_SIZE > req.getNumBytes() - bytes_read ? req.getNumBytes() - bytes_read : CHUNK_SIZE);
-					
-					this_read = datafile.read(&readBuf, to_read);
-					
-					//push to the passed buffer
-					req.getBuf()->transfer_in(readBuf, this_read);
-					
-					bytes_read += this_read;
+				if(!datafile.open((const char*)fn)){
+					__BKPT();
+					error = true;
 				}
-				else eof = true;
+				else {
+					datafile.seekSet(exit_pos);
 				
-				exit_pos = datafile.curPosition();
-				datafile.close();
+					if(datafile.available()){
+						//don't overshoot the requested number of bytes
+						to_read = (CHUNK_SIZE > req.getNumBytes() - bytes_read ? req.getNumBytes() - bytes_read : CHUNK_SIZE);
+					
+						this_read = datafile.read(&readBuf, to_read);
+					
+						//push to the passed buffer
+						req.getBuf()->transfer_in(readBuf, this_read);
+					
+						bytes_read += this_read;
+					}
+					else eof = true;
 				
-				QF_CRIT_EXIT();
+					exit_pos = datafile.curPosition();
+					datafile.close();
+				}
+				
+				//QF_CRIT_EXIT();
+				QF_INT_ENABLE();
 			}
 			
 			//publish response that will be handled by whoever requested the data
 			Evt const &resp = EVT_CAST(*e);
-			Evt *evt = new SDReadFileResponse(resp.GetSeq(), req.getFilename(), eof, exit_pos, bytes_read, req.getBuf());
+			Evt *evt = new SDReadFileResponse(resp.GetSeq(), req.getFilename(), eof, exit_pos, bytes_read, req.getBuf(), error);
+			QF::PUBLISH(evt, me);
+			status = Q_HANDLED();
+			break;
+		}
+		case SD_WRITE_FILE_REQ: {
+			//LOG_EVENT(e);
+			
+			//toggle LED to show card activity
+			digitalWrite(13, !digitalRead(13));
+			
+			SdFile datafile;
+			uint16_t bytes_written = 0;
+			uint16_t to_write = 0;
+			bool error = false;
+			
+			SDReadFileReq const &req = static_cast<SDReadFileReq const &>(*e);
+			
+			uint32_t exit_pos = req.getPos();
+
+			//read bytes in chunks until either end of file or requested number of bytes has been read
+			while(bytes_written < req.getNumBytes() && !error){
+				//QF_CRIT_ENTRY();
+				QF_INT_DISABLE();
+				
+				char fn[50];
+				strcpy(fn, req.getFilename());
+				
+				if(!datafile.open((const char*)fn, O_CREAT | O_WRITE)){
+					__BKPT();
+					error = true;
+				}
+				else {
+					if(exit_pos == 0) datafile.truncate(0);
+					else datafile.seekSet(exit_pos);
+					
+					//don't overshoot the requested number of bytes
+					to_write = (CHUNK_SIZE > req.getNumBytes() - bytes_written ? req.getNumBytes() - bytes_written : CHUNK_SIZE);
+					
+					req.getBuf()->transfer_out(readBuf, to_write);
+					Q_ASSERT(datafile.write(&readBuf, to_write) == to_write);
+						
+					bytes_written += to_write;
+					
+					exit_pos = datafile.curPosition();
+					datafile.close();
+				}
+				
+				//QF_CRIT_EXIT();
+				QF_INT_ENABLE();
+			}
+			
+			//publish response that will be handled by whoever requested the write
+			Evt const &resp = EVT_CAST(*e);
+			Evt *evt = new SDWriteFileResponse(req.GetSeq() + 1, req.getFilename(), exit_pos, req.getBuf(), error);
 			QF::PUBLISH(evt, me);
 			status = Q_HANDLED();
 			break;

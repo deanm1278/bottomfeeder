@@ -167,6 +167,7 @@ QState MIDIUSB::Started(MIDIUSB * const me, QEvt const * const e) {
 }
 
 void MIDIUSB::RxCallback() {
+	//TODO: this buffer is actually not thread safe
 	if(MidiUSBDevice.available()){
 		//push the new data to the buffer
 		MIDIBuf.transfer_in(MidiUSBDevice.event, 4);

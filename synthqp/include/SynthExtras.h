@@ -23,12 +23,24 @@ struct CC_ARG{
 	ccType_t type;
 };
 
+//these will be stored when we get CC messages and used to write presets
+struct CC_LOG{
+	byte cc;
+	byte values[NUM_CHANNELS] = {0, 0, 0};
+};
+
 class LFO_TARGET{
 public:
 	LFO_TARGET() : lfos{NULL, NULL} {}
 	~LFO_TARGET() {}
 		
 	LFO *lfos[NUM_LFO];	
+	
+	void reset(){
+		for(int i=0; i<NUM_LFO; i++){
+			lfos[i] = NULL;
+		}
+	};
 };
 
 class LFO : public LFO_TARGET {
@@ -41,6 +53,7 @@ public:
 	struct ud_bits {
 		uint8_t rate = 1;
 		uint8_t depth = 0;
+		uint8_t wave = 0;
 	};
 	struct LFO::ud_bits UPDATE_BITS;
 		
@@ -55,6 +68,8 @@ public:
 	//we will need to reference these when changing targets
 	LFO_TARGET *target = NULL;
 	uint8_t targetType = LFO_TARGET_NONE;
+	
+	const char *filename = "basic_sin.w";
 	
 	int mapMax = 32767;
 	
@@ -115,6 +130,13 @@ public:
 			setTimerFreq(TC, rate);
 			UPDATE_BITS.rate = false;
 		}
+	}
+	
+	void reset(){
+		target = NULL;
+		targetType = LFO_TARGET_NONE;
+		
+		LFO_TARGET::reset();
 	}
 	
 private:
@@ -202,18 +224,21 @@ public:
 	wavetable() : LFO_TARGET() {};
 	~wavetable() {};
 	
-	bool ACTIVE = false;
+	struct ud_bits {
+		uint8_t fs = 0;
+		uint8_t wave = 0;
+	};
+	struct wavetable::ud_bits UPDATE_BITS;
 	
 	struct note *CurrentNote = NULL;
-
+	
 	uint32_t FS_BASE = 0;
 	int FS_NET = 0;
-	bool UPDATE_FS = false;
 	
 	int TUNE = 0;						//for detuning
 	int TRANSPOSE = 0;
 
-	String filename = "perf_0.w";
+	const char *filename = "basic_saw.w";
 	uint16_t VOL = 12000;
 	
 	void setNote(struct note *n){ 
@@ -223,14 +248,14 @@ public:
 		uint32_t newBase = (n->pitch - 12) * 50 + transpose + TUNE;
 		if(newBase != FS_BASE){
 			FS_BASE = newBase;
-			UPDATE_FS = true;
+			UPDATE_BITS.fs = true;
 		}
 	};
 	
 	void stopNote(){
 		FS_BASE = FS_NOTE_OFF;
 		CurrentNote = NULL;
-		UPDATE_FS = true;
+		UPDATE_BITS.fs = true;
 	};
 	
 	void setTune(int tune){
@@ -242,6 +267,15 @@ public:
 		TRANSPOSE = transpose;
 		setNote(CurrentNote);
 	};
+	
+	void setVol(uint16_t vol){
+		VOL = vol;
+		UPDATE_BITS.wave = true;
+	}
+	void setWave(const char *fn){
+		filename = fn;
+		UPDATE_BITS.wave = true;
+	}
 };
 
 #endif

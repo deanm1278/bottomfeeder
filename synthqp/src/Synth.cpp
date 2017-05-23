@@ -5,6 +5,7 @@
 #include "qp_extras.h"
 #include "event.h"
 #include "noteDefs.h"
+#include "waveDefs.h"
 
 #include "bsp.h"
 
@@ -17,10 +18,12 @@ wavetable Synth::waves[] = {wavetable(), wavetable(), wavetable()};
 cv Synth::cvs[] = {cv(), cv(), cv(), cv(), cv()};
 LFO Synth::lfos[] = {LFO(TC4), LFO(TC5)};
 struct note *Synth::notebuf[] = {NULL, NULL, NULL, NULL, NULL, NULL};
+struct CC_LOG Synth::cc_log[MAX_CC];
 
 Synth::Synth() :
 QActive((QStateHandler)&Synth::InitialPseudoState),
-m_id(SYNTH), m_name("Synth"), adsr(), SDBuffer(sdbuf, SD_READ_MAX) {}
+m_id(SYNTH), m_name("Synth"), adsr(), SDBuffer(sdbuf, SD_READ_MAX),
+m_waveformTimer(this, SYNTH_WAVEFORM_TIMER) {}
 
 Synth::~Synth() {}
 
@@ -51,7 +54,12 @@ QState Synth::InitialPseudoState(Synth * const me, QEvt const * const e) {
 	me->subscribe(SYNTH_SET_MODE_PARAPHONIC_REQ);
 	me->subscribe(SYNTH_SET_MODE_MONOPHONIC_REQ);
 	
+	me->subscribe(SYNTH_LOAD_PRESET_REQ);
+	me->subscribe(SYNTH_STORE_PRESET_REQ);
+	
 	me->subscribe(SD_READ_FILE_RESPONSE);
+	me->subscribe(SD_WRITE_FILE_RESPONSE);
+	me->subscribe(FPGA_WRITE_WAVE_CFM);
 	
 	return Q_TRAN(&Synth::Root);
 }
@@ -142,12 +150,14 @@ QState Synth::Started(Synth * const me, QEvt const * const e) {
 		case Q_EXIT_SIG: {
 			LOG_EVENT(e);
 			me->stopTimer();
+			me->m_waveformTimer.disarm();
 			status = Q_HANDLED();
 			break;
 		}
 		case Q_INIT_SIG:{
 			LOG_EVENT(e);
-			status = Q_TRAN(&Synth::Monophonic);
+			if(me->cc_log[PARA_MODE_CC].values[0] > 63) status = Q_TRAN(&Synth::Paraphonic);
+			else status = Q_TRAN(&Synth::Monophonic);
 			break;
 		}
 		case SYNTH_STOP_REQ: {
@@ -191,8 +201,12 @@ QState Synth::Started(Synth * const me, QEvt const * const e) {
 			
 			me->LFOWritingNum = req.getNum();
 			
+			char path[50];
+			strcpy(path, WAVES_PATH);
+			strcat(path, req.getFilename());
+			
 			Evt const &r = EVT_CAST(*e);
-			Evt *evt = new SDReadFileReq(0, req.getFilename(), 0, SD_READ_MAX, &me->SDBuffer);
+			Evt *evt = new SDReadFileReq(0, path, 0, SD_READ_MAX, &me->SDBuffer);
 			QF::PUBLISH(evt, me);
 			
 			status = Q_TRAN(&Synth::WritingLFO);
@@ -269,14 +283,48 @@ QState Synth::Started(Synth * const me, QEvt const * const e) {
 		case PITCH_BEND_REQ: {
 			//LOG_EVENT(e);
 			pitchBendReq const &req = static_cast<pitchBendReq const &>(*e);
-			me->bend = map(req.getValue(), 0, 16383, -100, 100);
+			
+			//TODO: max val on this is wrong I think
+			me->bend = map(req.getValue(), -8192, 8191, -100, 100);
 			
 			//mark all channels to be updated
 			for(int i=0; i<NUM_CHANNELS; i++){
-				waves[i].UPDATE_FS = true;
+				waves[i].UPDATE_BITS.fs = true;
 			}
 			
 			status = Q_HANDLED();
+			break;
+		}
+		case FPGA_WRITE_WAVE_CFM: {
+			LOG_EVENT(e);
+			
+			//interrupts are disabled during card access, so kill any stuck notes
+			me->killNotes();
+			
+			status = Q_HANDLED();
+			break;
+		}
+		case CONTROL_CHANGE_REQ:{
+			controlChangeReq const &req = static_cast<controlChangeReq const &>(*e);
+			//Q_ASSERT(req.getCC() < MAX_CC);
+			if(me->cc[req.getCC()] != NULL) (me->*me->cc[req.getCC()])(req.getChannel(), req.getValue(), &me->cc_args[req.getCC()]);
+			
+			//log this for saving presets
+			CC_LOG *c = &me->cc_log[req.getCC()];
+			c->cc = req.getCC();
+			c->values[req.getChannel() - 1] = req.getValue();
+			
+			status = Q_HANDLED();
+			break;
+		}
+		case SYNTH_STORE_PRESET_REQ: {
+			LOG_EVENT(e);
+			status = Q_TRAN(&Synth::StoringPreset);
+			break;
+		}
+		case SYNTH_LOAD_PRESET_REQ: {
+			LOG_EVENT(e);
+			status = Q_TRAN(&Synth::LoadingPreset);
 			break;
 		}
 		default: {
@@ -316,9 +364,25 @@ QState Synth::Monophonic(Synth * const me, QEvt const * const e) {
 			status = Q_HANDLED();
 			break;
 		}
-		case CONTROL_CHANGE_REQ:{
-			controlChangeReq const &req = static_cast<controlChangeReq const &>(*e);
-			if(me->cc[req.getCC()] != NULL) (me->*me->cc[req.getCC()])(req.getChannel(), req.getValue(), &me->cc_args[req.getCC()]);
+		case SYNTH_WAVEFORM_TIMER:{
+			LOG_EVENT(e);
+			for(int i=0; i<NUM_CHANNELS; i++){
+				if(waves[i].UPDATE_BITS.wave){
+					Evt *evt;
+					evt = new FPGAWriteWaveFile(waves[i].filename, i, waves[i].VOL);
+					QF::PUBLISH(evt, me);
+					waves[i].UPDATE_BITS.wave = false;
+				}
+			}
+			
+			for(int i=0; i<NUM_LFO; i++){
+				if(lfos[i].UPDATE_BITS.wave){
+					Evt *evt;
+					evt = new synthWriteLFOReq(i, lfos[i].filename);
+					me->postLIFO(evt);
+					lfos[i].UPDATE_BITS.wave = 0;
+				}
+			}
 			
 			status = Q_HANDLED();
 			break;
@@ -346,7 +410,7 @@ QState Synth::Paraphonic(Synth * const me, QEvt const * const e) {
 				w->setTranspose(0);
 				w->stopNote();
 				
-				Evt *evt = new FPGAWriteWaveFile(base->filename.c_str(), i, w->VOL);
+				Evt *evt = new FPGAWriteWaveFile(base->filename, i, w->VOL);
 			}
 			
 			//enable all subs
@@ -380,14 +444,43 @@ QState Synth::Paraphonic(Synth * const me, QEvt const * const e) {
 				struct CC_ARG *arg = &me->cc_args[req.getCC()];
 				switch(arg->type){
 					case WT_TRANSPOSE:
-					case WT_VOLUME:
-						break;
 					default:
 						(me->*me->cc[req.getCC()])(req.getChannel(), req.getValue(), &me->cc_args[req.getCC()]);
+						
+						//log this for saving presets
+						CC_LOG *c = &me->cc_log[req.getCC()];
+						c->cc = req.getCC();
+						c->values[req.getChannel() - 1] = req.getValue();
 						break;
 						
 				}
 			}
+			status = Q_HANDLED();
+			break;
+		}
+		case SYNTH_WAVEFORM_TIMER:{
+			LOG_EVENT(e);
+			wavetable *w = &waves[0];
+			if(w->UPDATE_BITS.wave){
+				for(int i=0; i<NUM_CHANNELS; i++){
+					Evt *evt;
+					waves[i].filename = w->filename;
+					waves[i].VOL = w->VOL;
+					evt = new FPGAWriteWaveFile(w->filename, i, w->VOL);
+					QF::PUBLISH(evt, me);
+					waves[i].UPDATE_BITS.wave = false;
+				}
+			}
+			
+			for(int i=0; i<NUM_LFO; i++){
+				if(lfos[i].UPDATE_BITS.wave){
+					Evt *evt;
+					evt = new synthWriteLFOReq(i, lfos[i].filename);
+					me->postLIFO(evt);
+					lfos[i].UPDATE_BITS.wave = 0;
+				}
+			}
+			
 			status = Q_HANDLED();
 			break;
 		}
@@ -413,7 +506,11 @@ QState Synth::WritingLFO(Synth * const me, QEvt const * const e) {
 			//for now lets enable lfo
 			me->lfos[me->LFOWritingNum].activate();
 			//recall if we have deferred another write req
-			me->recall(&me->m_deferQueue);
+			while(me->recall(&me->m_deferQueue));
+			
+			//interrupts are disabled during card access, so kill any stuck notes
+			me->killNotes();
+			
 			status = Q_HANDLED();
 			break;
 		}
@@ -422,10 +519,15 @@ QState Synth::WritingLFO(Synth * const me, QEvt const * const e) {
 			status = Q_HANDLED();
 			break;
 		}
-		case SYNTH_WRITE_LFO_REQ:{
+		case SYNTH_SET_MODE_MONOPHONIC_REQ:
+		case SYNTH_SET_MODE_PARAPHONIC_REQ:
+		case SYNTH_WRITE_LFO_REQ:
+		case SYNTH_LOAD_PRESET_REQ:
+		case SYNTH_STORE_PRESET_REQ:{
 			LOG_EVENT(e);
 			//defer this until we are done writing the current lfo
 			me->defer(&me->m_deferQueue, e);
+			status = Q_HANDLED();
 			break;
 		}
 		case SD_READ_FILE_RESPONSE: {
@@ -434,35 +536,243 @@ QState Synth::WritingLFO(Synth * const me, QEvt const * const e) {
 			SDReadFileResponse const &req = static_cast<SDReadFileResponse const &>(*e);
 			if(req.getBuf() == &me->SDBuffer){
 				//we know this read is for us
-				
-				signed short val;
-				byte buf[2];
-				int ix = 0;
-				while(!me->SDBuffer.empty()){
-					buf[0] = me->SDBuffer.pop_front();
-					buf[1] = me->SDBuffer.pop_front();
-					
-					if(ix % 4 == 0){
-						
-						//since there are 1024 samples in the .w files, take one out of every 4 bytes to downsample to 256
-						uint16_t rawval = ((uint16_t)buf[1] << 8) | (uint16_t)buf[0];
-						val = reinterpret_cast<signed short&>(rawval);
-					
-						memcpy(me->lfos[me->LFOWritingNum].values + me->writePos, &val, sizeof(signed short));
-						me->writePos++;
-					}
-					ix++;
-				}
-				
-				if(req.getEof()){
+				if(req.getError()){
+					//oh well, lets just keep going it's fine
 					status = Q_TRAN(&Synth::Started);
 				}
 				else{
-					//request more data
-					Evt const &r = EVT_CAST(*e);
-					Evt *evt = new SDReadFileReq(r.GetSeq(), req.getFilename(), req.getExitPos(), SD_READ_MAX, &me->SDBuffer);
-					QF::PUBLISH(evt, me);
+					signed short val;
+					byte buf[2];
+					int ix = 0;
+					while(!me->SDBuffer.empty()){
+						buf[0] = me->SDBuffer.pop_front();
+						buf[1] = me->SDBuffer.pop_front();
 					
+						if(ix % 4 == 0){
+						
+							//since there are 1024 samples in the .w files, take one out of every 4 bytes to downsample to 256
+							uint16_t rawval = ((uint16_t)buf[1] << 8) | (uint16_t)buf[0];
+							val = reinterpret_cast<signed short&>(rawval);
+					
+							memcpy(me->lfos[me->LFOWritingNum].values + me->writePos, &val, sizeof(signed short));
+							me->writePos++;
+						}
+						ix++;
+					}
+				
+					if(req.getEof()){
+						status = Q_TRAN(&Synth::Started);
+					}
+					else{
+						//request more data
+						Evt const &r = EVT_CAST(*e);
+						Evt *evt = new SDReadFileReq(r.GetSeq(), req.getFilename(), req.getExitPos(), SD_READ_MAX, &me->SDBuffer);
+						QF::PUBLISH(evt, me);
+					
+						status = Q_HANDLED();
+					}
+				}
+			}
+			break;
+		}
+		default: {
+			status = Q_SUPER(&Synth::Started);
+			break;
+		}
+	}
+	return status;
+}
+
+QState Synth::LoadingPreset(Synth * const me, QEvt const * const e) {
+	QState status;
+	switch (e->sig) {
+		case Q_ENTRY_SIG: {
+			LOG_EVENT(e);
+			//otherwise we're gonna have some problems
+			Q_ASSERT(SD_READ_MAX % (NUM_CHANNELS + 1) == 0);
+			me->resetDefaults();
+			
+			char num[3];
+			itoa(me->cc_log[PRESET_LOAD_SELECT_CC].values[0], num, 10);
+			const char *pnum = (const char *)num;
+			
+			char path[25];
+			strcpy(path, PRESETS_PATH);
+			strcat(path, "p");
+			strcat(path, pnum);
+			strcat(path, ".pst");
+			
+			Evt *evt = new SDReadFileReq(0, path, 0, SD_READ_MAX, &me->SDBuffer);
+			QF::PUBLISH(evt, me);
+			
+			status = Q_HANDLED();
+			break;
+		}
+		case Q_EXIT_SIG: {
+			LOG_EVENT(e);
+			//for now lets enable lfo
+			me->lfos[me->LFOWritingNum].activate();
+			//recall if we have deferred another write req
+			while(me->recall(&me->m_deferQueue));
+			
+			status = Q_HANDLED();
+			break;
+		}
+		case Q_INIT_SIG:{
+			LOG_EVENT(e);
+			status = Q_HANDLED();
+			break;
+		}
+		case SYNTH_SET_MODE_MONOPHONIC_REQ:
+		case SYNTH_SET_MODE_PARAPHONIC_REQ:
+		case SYNTH_WAVEFORM_TIMER:
+		case SYNTH_WRITE_LFO_REQ:{
+			LOG_EVENT(e);
+			//defer this until we are done loading the preset
+			me->defer(&me->m_deferQueue, e);
+			break;
+		}
+		case SYNTH_LOAD_PRESET_REQ: 
+		case SYNTH_STORE_PRESET_REQ: {
+			LOG_EVENT(e);
+			//idk lets just ignore these. what are you even doing my dude? just wait
+			status = Q_HANDLED();
+			break;
+		}
+		case SD_READ_FILE_RESPONSE: {
+			LOG_EVENT(e);
+			
+			SDReadFileResponse const &req = static_cast<SDReadFileResponse const &>(*e);
+			if(req.getBuf() == &me->SDBuffer){
+				//we know this read is for us
+				if(req.getError()){
+					//hmm preset file probably doesn't exist
+					status = Q_TRAN(&Synth::Started);
+				}
+				else{
+					//send all the messages
+					while(!me->SDBuffer.empty()){
+						byte cc = me->SDBuffer.pop_front();
+						
+						for(int i=0; i<NUM_CHANNELS; i++){
+							Evt *evt = new controlChangeReq(i + 1, cc, me->SDBuffer.pop_front());
+							me->postLIFO(evt);
+						}
+					}
+					
+					if(req.getEof()){
+						status = Q_TRAN(&Synth::Started);
+					}
+					else{
+						//request more data
+						Evt const &r = EVT_CAST(*e);
+						Evt *evt = new SDReadFileReq(r.GetSeq(), req.getFilename(), req.getExitPos(), SD_READ_MAX, &me->SDBuffer);
+						QF::PUBLISH(evt, me);
+						
+						status = Q_HANDLED();
+					}
+				}
+			}
+			break;
+		}
+		default: {
+			status = Q_SUPER(&Synth::Started);
+			break;
+		}
+	}
+	return status;
+}
+
+QState Synth::StoringPreset(Synth * const me, QEvt const * const e) {
+	QState status;
+	switch (e->sig) {
+		case Q_ENTRY_SIG: {
+			LOG_EVENT(e);
+			me->ccStoreNum = 0;
+			uint16_t numBytes = 0;
+			
+			//otherwise we're gonna have some problems
+			Q_ASSERT(SD_READ_MAX % (NUM_CHANNELS + 1) == 0);
+			
+			char num[3];
+			itoa(me->cc_log[PRESET_STORE_SELECT_CC].values[0], num, 10);
+			const char *pnum = (const char *)num;
+			
+			char path[25];
+			strcpy(path, PRESETS_PATH);
+			strcat(path, "p");
+			strcat(path, pnum);
+			strcat(path, ".pst");
+			
+			//empty the buffer in case there's anything in there (shouldn't be)
+			while(!me->SDBuffer.empty()){ me->SDBuffer.pop_front(); }
+			
+			// 124 - 127 are reserved for loading and storing presets
+			while(!me->SDBuffer.full() && me->ccStoreNum < PRESET_LOAD_SELECT_CC){
+				
+				//only write CCs that are actually active
+				if(me->cc[me->ccStoreNum] != NULL){
+					me->SDBuffer.push_back(me->cc_log[me->ccStoreNum].cc);
+					me->SDBuffer.transfer_in(me->cc_log[me->ccStoreNum].values, NUM_CHANNELS);
+					numBytes += (NUM_CHANNELS + 1);
+				}
+				me->ccStoreNum++;
+			}
+			
+			Evt *evt = new SDWriteFileReq(0, path, 0, numBytes, &me->SDBuffer);
+			QF::PUBLISH(evt, me);
+			
+			status = Q_HANDLED();
+			break;
+		}
+		case Q_EXIT_SIG: {
+			LOG_EVENT(e);
+			
+			while(me->recall(&me->m_deferQueue));
+			
+			status = Q_HANDLED();
+			break;
+		}
+		case Q_INIT_SIG:{
+			LOG_EVENT(e);
+			status = Q_HANDLED();
+			break;
+		}
+		case SYNTH_SET_MODE_MONOPHONIC_REQ:
+		case SYNTH_SET_MODE_PARAPHONIC_REQ:
+		case SYNTH_WRITE_LFO_REQ:
+		case SYNTH_LOAD_PRESET_REQ:
+		case SYNTH_STORE_PRESET_REQ:{
+			LOG_EVENT(e);
+			//defer this until we are done writing the preset
+			me->defer(&me->m_deferQueue, e);
+			break;
+		}
+		case SD_WRITE_FILE_RESPONSE: {
+			LOG_EVENT(e);
+			uint16_t numBytes = 0;
+			
+			SDWriteFileResponse const &req = static_cast<SDWriteFileResponse const &>(*e);
+			if(req.getBuf() == &me->SDBuffer){
+				// 124 - 127 are reserved for loading and storing presets
+				while(!me->SDBuffer.full() && me->ccStoreNum < PRESET_LOAD_SELECT_CC){
+					
+					//only write CCs that are actually active
+					if(me->cc[me->ccStoreNum] != NULL){
+						me->SDBuffer.push_back(me->cc_log[me->ccStoreNum].cc);
+						me->SDBuffer.transfer_in(me->cc_log[me->ccStoreNum].values, NUM_CHANNELS);
+						numBytes += (NUM_CHANNELS + 1);
+					}
+					me->ccStoreNum++;
+				}
+				if(me->SDBuffer.empty()){
+					//nothing more to write
+					status = Q_TRAN(&Synth::Started);
+				}
+				else{
+					Evt *evt = new SDWriteFileReq(0, req.getFilename(), req.getExitPos(), numBytes, &me->SDBuffer);
+					QF::PUBLISH(evt, me);
+				
 					status = Q_HANDLED();
 				}
 			}
@@ -495,18 +805,18 @@ void Synth::flush(){
 			}
 		}
 		if(w->FS_NET != net){
-			w->UPDATE_FS = true;
+			w->UPDATE_BITS.fs = true;
 			w->FS_NET = net;
 		}
 		//write any necessary updates
-		if(w->UPDATE_FS){
+		if(w->UPDATE_BITS.fs){
 			uint16_t fs;
 			if(w->FS_BASE == FS_NOTE_OFF) fs = 0;
 			else fs = periodToFS[w->FS_BASE + w->FS_NET + bend];
 			evt = new FPGAWriteFS(i, fs);
 			QF::PUBLISH(evt, this);
 			
-			w->UPDATE_FS = false;
+			w->UPDATE_BITS.fs = false;
 		}
 	}
 	
@@ -584,6 +894,25 @@ void Synth::timerCallback(){
 
 void Synth::LFOFireCallback(uint8_t num){
 	lfos[num].process();
+}
+
+void Synth::resetDefaults(){
+	for(int i=0; i<NUM_CHANNELS; i++){
+		waves[i].reset();
+	}
+	for(int i=0; i<NUM_LFO; i++){
+		lfos[i].reset();
+	}
+}
+
+void Synth::killNotes(){
+	for(int i=0; i<NOTE_BUF_MAX; i++){
+		free(notebuf[i]);
+		notebuf[i] = NULL;
+	}
+	for(int i=0; i<NUM_CHANNELS; i++){
+		waves[i].stopNote();
+	}
 }
 
 /************ NOTE HANDLERS **********/
@@ -799,6 +1128,22 @@ void Synth::setControlHandler(byte number, ccType_t type, byte *args, int count)
 			/* set a default waveform */
 			cc[number] = &Synth::cc_LFO_target;
 			break;
+		case PRESET_LOAD_SELECT:
+			/* dont do anything rly */
+			cc[number] = &Synth::cc_dummy;
+			break;
+		case PRESET_STORE_SELECT:
+			/* dont do anything rly */
+			cc[number] = &Synth::cc_dummy;
+			break;
+		case PRESET_LOAD_ENTER:
+			/* load a preset */
+			cc[number] = &Synth::cc_load;
+			break;
+		case PRESET_STORE_ENTER:
+			/* store a preset */
+			cc[number] = &Synth::cc_store;
+			break;
         default:
             //this is not a valid type.
             cc[number] = NULL;
@@ -809,199 +1154,190 @@ void Synth::setControlHandler(byte number, ccType_t type, byte *args, int count)
 
 //*********** CC PROCESSOR FUNCTIONS *****************//
 void Synth::cc_LFO_rate(byte channel, byte value, struct CC_ARG *args){
-	Q_ASSERT(channel <= NUM_LFO);
-    
-    lfos[channel - 1].setRate(map(value, 0, 127, 0, 20 * LFO_NUM_VALUES));
+	if(channel <= NUM_LFO){
+		lfos[channel - 1].setRate(map(value, 0, 127, 0, 20 * LFO_NUM_VALUES));
+	}
 }
 
 void Synth::cc_LFO_depth(byte channel, byte value, struct CC_ARG *args){
-    Q_ASSERT(channel <= NUM_LFO);
-	
-	lfos[channel - 1].setDepth(value);
+    if(channel <= NUM_LFO){
+		lfos[channel - 1].setDepth(value);
+	}
 }
 
 void Synth::cc_LFO_wave(byte channel, byte value, struct CC_ARG *args){
 	
-	Q_ASSERT(channel <= NUM_LFO);
+	if(channel <= NUM_LFO){
 	
-	const char *filename = NULL;
-	switch(value){
-		case 0:
-			break;
-		case SAW:
-			filename = "perf_0.w";
-			break;
-		case SQUARE:
-			filename = "perf_2.w";
-			break;
-		case SINE:
-			filename = "perf_1.w";
-			break;
-		case TRIANGLE:
-			filename = "perf_3.w";
-			break;
-		default:
-			//not a valid default wave
-			Q_ASSERT(0);
-			break;
-	}
-	if(filename != NULL){
-		Evt *evt;
-		evt = new synthWriteLFOReq(channel - 1, filename);
-		this->postLIFO(evt);
+		const char *filename = waveforms[value];
+		
+		if(filename != NULL){
+			lfos[channel - 1].filename = filename;
+			lfos[channel - 1].UPDATE_BITS.wave = 1;
+			
+			m_waveformTimer.rearm(800);
+		}
 	}
 }
 
 void Synth::cc_LFO_target(byte channel, byte value, struct CC_ARG *args){
 	
-	Q_ASSERT(channel <= NUM_LFO);
+	if(channel <= NUM_LFO){
 	
-	uint8_t targetType = LFO_TARGET_NONE;
-	uint8_t targetId;
+		uint8_t targetType = LFO_TARGET_NONE;
+		uint8_t targetId;
 	
-	switch(value){
-		case 1:
-			targetType = LFO_TARGET_PITCH;
-			targetId = 0;
-			break;
-		case 2:
-			targetType = LFO_TARGET_CV;
-			targetId = CUTOFF;
-			break;
-		case 3:
-			targetType = LFO_TARGET_CV;
-			targetId = AMP;
-			break;
-		case 4:
-			targetType = LFO_TARGET_CV;
-			targetId = RESONANCE;
-			break;
-		case 5:
-			targetType = LFO_TARGET_CV;
-			targetId = NOISE;
-			break;
-		case 6:
-			targetType = LFO_TARGET_CV;
-			targetId = SUB;
-			break;
-		case 7:
-			targetType = LFO_TARGET_RATE;
-			targetId = (channel == 1 ? 1 : 0);
-			break;
-		case 8:
-			targetType = LFO_TARGET_DEPTH;
-			targetId = (channel == 1 ? 1 : 0);
-			break;
-		default:
-			break;
-	}
-	if(targetType != LFO_TARGET_NONE){
-		Evt *evt;
-		evt = new synthSetLFOTargetReq(channel - 1, targetType, targetId);
-		this->postLIFO(evt);
+		switch(value){
+			case 1:
+				targetType = LFO_TARGET_PITCH;
+				targetId = 0;
+				break;
+			case 2:
+				targetType = LFO_TARGET_CV;
+				targetId = CUTOFF;
+				break;
+			case 3:
+				targetType = LFO_TARGET_CV;
+				targetId = AMP;
+				break;
+			case 4:
+				targetType = LFO_TARGET_CV;
+				targetId = RESONANCE;
+				break;
+			case 5:
+				targetType = LFO_TARGET_CV;
+				targetId = NOISE;
+				break;
+			case 6:
+				targetType = LFO_TARGET_CV;
+				targetId = SUB;
+				break;
+			case 7:
+				targetType = LFO_TARGET_RATE;
+				targetId = (channel == 1 ? 1 : 0);
+				break;
+			case 8:
+				targetType = LFO_TARGET_DEPTH;
+				targetId = (channel == 1 ? 1 : 0);
+				break;
+			default:
+				break;
+		}
+		if(targetType != LFO_TARGET_NONE){
+			Evt *evt;
+			evt = new synthSetLFOTargetReq(channel - 1, targetType, targetId);
+			this->postLIFO(evt);
+		}
 	}
 }
 
 void Synth::cc_cv(byte channel, byte value, struct CC_ARG *args){
     //get the arguments. There should be only one integer value
-    struct CC_ARG *a = args;
-	int const &pwm = static_cast<int const &>(*a->args);
-    
-    cvs[pwm].setBase(map(value, 0, 127, 0, 4095));
+	if(channel == 1){
+		struct CC_ARG *a = args;
+		int const &pwm = static_cast<int const &>(*a->args);
+		
+		cvs[pwm].setBase(map(value, 0, 127, 0, 4095));
+	}
 }
 
 void Synth::cc_tune(byte channel, byte value, struct CC_ARG *args){
-    Q_ASSERT(channel <= NUM_CHANNELS);
-    
-	waves[channel - 1].setTune(map(value, 0, 127, -50, 50));
+    if(channel <= NUM_CHANNELS){
+		waves[channel - 1].setTune(map(value, 0, 127, -50, 50));
+	}
 }
 
 void Synth::cc_transpose(byte channel, byte value, struct CC_ARG *args){
-    Q_ASSERT(channel <= NUM_CHANNELS);
-    
-    waves[channel - 1].setTranspose(map(value, 0, 127, -24, 24));
+    if(channel <= NUM_CHANNELS){
+		waves[channel - 1].setTranspose(map(value, 0, 127, -24, 24));
+	}
 }
 
 void Synth::cc_volume(byte channel, byte value, struct CC_ARG *args){
-    Q_ASSERT(channel <= NUM_CHANNELS);
-    
-    //setChannelVolume(channel, (float)value/127.);
+    if(channel <= NUM_CHANNELS){
+		waves[channel - 1].setVol(map(value, 0, 127, 0, 32767));
+			
+		m_waveformTimer.rearm(800);
+	}
 }
 
 void Synth::cc_sub(byte channel, byte value, struct CC_ARG *args){
-    struct CC_ARG *a = args;
-    //int channel = (*(int *)a->args);
+	if(channel <= NUM_CHANNELS){
+		struct CC_ARG *a = args;
+		//int channel = (*(int *)a->args);
     
-	/*
-    //TODO: future version needs to have miso on fpga, we need to know state of sub reg
-    if(value > 63) writeReg(BFX_SUB_ENABLE, channel);
-    else writeReg(BFX_SUB_ENABLE, BFX_SUB_OFF);
-	*/
+		/*
+		//TODO: future version needs to have miso on fpga, we need to know state of sub reg
+		if(value > 63) writeReg(BFX_SUB_ENABLE, channel);
+		else writeReg(BFX_SUB_ENABLE, BFX_SUB_OFF);
+		*/
+	}
 }
 void Synth::cc_para(byte channel, byte value, struct CC_ARG *args){
-	Evt *evt;
-    if(value > 63)
+	if(channel == 1){
+		Evt *evt;
+		if(value > 63)
 		evt = new Evt(SYNTH_SET_MODE_PARAPHONIC_REQ);
-	else
+		else
 		evt = new Evt(SYNTH_SET_MODE_MONOPHONIC_REQ);
-    
-	this->postLIFO(evt);
+		
+		this->postLIFO(evt);
+	}
 }
 void Synth::cc_glide(byte channel, byte value, struct CC_ARG *args){
-    int glide = map(value, 0, 127, 0, 65535);
-    
-    Evt *evt = new FPGASetPortamentoReq(glide);
-	QF::PUBLISH(evt, this);
+	if(channel == 1){
+		int glide = map(value, 0, 127, 0, 65535);
+		
+		Evt *evt = new FPGASetPortamentoReq(glide);
+		QF::PUBLISH(evt, this);
+	}
 }
 void Synth::cc_env(byte channel, byte value, struct CC_ARG *args){
-	//get the arguments. There should be only one integer value
-	struct CC_ARG *a = args;
-	int const &param = static_cast<int const &>(*a->args);
+	if(channel == 1){
+		//get the arguments. There should be only one integer value
+		struct CC_ARG *a = args;
+		int const &param = static_cast<int const &>(*a->args);
 	
-	switch(param){
-		case CUTOFF_MIX:
-		case AMP_MIX:
-			adsr.setParam(param, map(value, 0, 127, 0, 32));
-			break;
-		case SUSTAIN:
-			adsr.setParam(param, value);
-			break;
-		default:
-			adsr.setParam(param, map(value, 0, 127, 0, 65535));
-			break;
+		switch(param){
+			case CUTOFF_MIX:
+			case AMP_MIX:
+				adsr.setParam(param, map(value, 0, 127, 0, 32));
+				break;
+			case SUSTAIN:
+				adsr.setParam(param, value);
+				break;
+			default:
+				adsr.setParam(param, map(value, 0, 127, 0, 65535));
+				break;
+		}
 	}
 }
 
 void Synth::cc_wave(byte channel, byte value, struct CC_ARG *args){
 	
-	Q_ASSERT(channel <= NUM_CHANNELS);
-	
-	const char *filename = NULL;
-	switch(value){
-		case 0:
-			break;
-		case SAW:
-			filename = "perf_0.w";
-			break;
-		case SQUARE:
-			filename = "perf_2.w";
-			break;
-		case SINE:
-			filename = "perf_1.w";
-			break;
-		case TRIANGLE:
-			filename = "perf_3.w";
-			break;
-		default:
-			//not a valid default wave
-			Q_ASSERT(0);
-			break;
+	if(channel <= NUM_CHANNELS){
+		const char *filename = waveforms[value];
+		
+		if(filename != NULL){
+			waves[channel - 1].setWave(filename);
+			
+			m_waveformTimer.rearm(800);
+		}
 	}
-	if(filename != NULL){
-		waves[channel - 1].filename = filename;
-	
-		Evt *evt;
-		evt = new FPGAWriteWaveFile(filename, channel - 1, waves[channel - 1].VOL);
-		QF::PUBLISH(evt, me);
+}
+
+void Synth::cc_load(byte channel, byte value, struct CC_ARG *args){
+	Evt *evt;
+	if(value == 127){
+		 evt = new Evt(SYNTH_LOAD_PRESET_REQ);
+		this->postLIFO(evt);
+	}
+}
+
+void Synth::cc_store(byte channel, byte value, struct CC_ARG *args){
+	Evt *evt;
+	if(value == 127){
+		 evt = new Evt(SYNTH_STORE_PRESET_REQ);
+		 this->postLIFO(evt);
 	}
 }

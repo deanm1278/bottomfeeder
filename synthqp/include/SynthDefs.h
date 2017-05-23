@@ -5,7 +5,20 @@
 #define LFO_NUM_VALUES 256
 #define LFO_MAX_FREQ 20
 
+#define NUM_CHANNELS	3
+#define NUM_CV			5
+#define MAX_CC 128
 #define NUM_LFO			2
+
+#define WAVES_PATH "waves/"
+#define PRESETS_PATH "presets/"
+
+#define PRESET_LOAD_SELECT_CC 124
+#define PRESET_LOAD_ENTER_CC 125
+#define PRESET_STORE_SELECT_CC 126
+#define PRESET_STORE_ENTER_CC 127
+
+#define PARA_MODE_CC 25
 
 enum {
 	SUB0 = 0x01,
@@ -55,15 +68,11 @@ typedef enum ccType_t{
 	GLIDE_TIME = 0x0A,
 	ENV = 0x0B,
 	LFO_WAVE = 0x0C,
-	CC_LFO_TARGET = 0x0D
-};
-
-//default waves
-enum {
-	SAW = 1,
-	SQUARE = 2,
-	SINE = 3,
-	TRIANGLE = 4	
+	CC_LFO_TARGET = 0x0D,
+	PRESET_LOAD_SELECT,
+	PRESET_LOAD_ENTER,
+	PRESET_STORE_SELECT,
+	PRESET_STORE_ENTER
 };
 
 #endif

@@ -12,7 +12,7 @@
 
 #define SD_CS 12
 
-#define CHUNK_SIZE 64
+#define CHUNK_SIZE 256
 
 using namespace QP;
 using namespace FW;
