@@ -276,8 +276,8 @@ NOTE_ON_REQ/ noteOnPara(event)
 
 NOTE_OFF_REQ/ noteOffPara(event)
 
-CONTROL_CHANGE_REQ/ block WT_TRANSPOSE and WT_VOLUME CCs,
-WT_WAVE requests should apply to all waves
+CONTROL_CHANGE_REQ/ block WT_TRANSPOSE CCs,
+WT_WAVE and WT_VOLUME requests should apply to all waves
 
 valign=top
 </panel_attributes>

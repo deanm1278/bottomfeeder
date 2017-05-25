@@ -40,7 +40,6 @@
 
 #include "hsm_id.h"
 
-#define LEDPIN 13
 #define FIRMWARE_PATH   "firmware/bf100.bin"
 
 using namespace QP;

@@ -150,14 +150,18 @@ private:
 class cv : public LFO_TARGET {
 	public:
 	cv() : LFO_TARGET() {};
+	cv(uint16_t low, uint16_t high) : LFO_TARGET(), low(low), high(high) {};
 	~cv() {};
 	
 	uint16_t BASE = 0;
 	int NET = 0;
 	bool UPDATE = false;
 	
-	void setBase(uint16_t base){
-		BASE = base;
+	uint16_t low = 0;
+	uint16_t high = 4095;
+	
+	void setBase(uint8_t base){
+		BASE = map(base, 0, 127, low, high);
 		UPDATE = true;
 	}
 };
@@ -178,14 +182,14 @@ public:
 	};
 	struct ADSR::ud_bits UPDATE_BITS;
 	
-	uint16_t A_BASE = 0;
-	uint16_t D_BASE = 0;
+	uint32_t A_BASE = 0;
+	uint32_t D_BASE = 0;
 	uint16_t S_BASE = 0;
-	uint16_t R_BASE = 0;
+	uint32_t R_BASE = 0;
 	uint16_t MIX_CUTOFF_BASE = 0;
 	uint16_t MIX_AMP_BASE = 0;
 	
-	void setParam(uint8_t param, uint16_t interval){
+	void setParam(uint8_t param, uint32_t interval){
 		switch(param){
 			case ATTACK:
 				A_BASE = interval;
@@ -239,7 +243,6 @@ public:
 	int TRANSPOSE = 0;
 
 	const char *filename = "basic_saw.w";
-	uint16_t VOL = 12000;
 	
 	void setNote(struct note *n){ 
 		CurrentNote = n;
@@ -267,11 +270,6 @@ public:
 		TRANSPOSE = transpose;
 		setNote(CurrentNote);
 	};
-	
-	void setVol(uint16_t vol){
-		VOL = vol;
-		UPDATE_BITS.wave = true;
-	}
 	void setWave(const char *fn){
 		filename = fn;
 		UPDATE_BITS.wave = true;

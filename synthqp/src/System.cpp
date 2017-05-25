@@ -456,12 +456,6 @@ QState System::Started(System * const me, QEvt const * const e) {
 					status = Q_HANDLED();
 				}
 				
-				else if(c == 'w'){
-					evt = new FPGAWriteWaveFile("perf_0.w", 0, 12000);
-					QF::PUBLISH(evt, me);
-					status = Q_HANDLED();
-				}
-				
 				else status = Q_HANDLED();
 			}
             else status = Q_HANDLED();
@@ -469,7 +463,7 @@ QState System::Started(System * const me, QEvt const * const e) {
         }
 		case USER_LED_TOGGLE_REQ: {
 			//LOG_EVENT(e); 
-			digitalWrite(LEDPIN, !digitalRead(LEDPIN));
+			digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 			status = Q_HANDLED();
 			break;
 		}

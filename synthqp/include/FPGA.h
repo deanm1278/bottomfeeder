@@ -36,19 +36,22 @@
 #define FPGA_PWM3 0x09 //vca
 #define FPGA_PWM4 0x0A //sub
 
-#define FPGA_NOISE 0x0B
+#define FPGA_VOL 0x0B
 #define FPGA_ENABLE 0x0C
 
-#define FPGA_A_INTERVAL 0x0D
-#define FPGA_D_INTERVAL 0x0E
-#define FPGA_R_INTERVAL 0x0F
-#define FPGA_SUS_LEVEL 0x10
-#define FPGA_ENV0_PWM0_MUL 0x11
-#define FPGA_ENV0_PWM2_MUL 0x12
+#define FPGA_A_INTERVAL_HIGH 0x0D
+#define FPGA_A_INTERVAL_LOW 0x0E
+#define FPGA_D_INTERVAL_HIGH 0x0F
+#define FPGA_D_INTERVAL_LOW 0x10
+#define FPGA_R_INTERVAL_HIGH 0x11
+#define FPGA_R_INTERVAL_LOW 0x12
+#define FPGA_SUS_LEVEL 0x13
+#define FPGA_ENV0_PWM0_MUL 0x14
+#define FPGA_ENV0_PWM2_MUL 0x15
 
-#define FPGA_PORT		0x13
+#define FPGA_PORT		0x16
 
-#define FPGA_KEY_PRESSED 0x14
+#define FPGA_KEY_PRESSED 0x17
 
 #define FPGA_SUB_OFF 0x00
 #define FPGA_SUB0 0x01
@@ -60,6 +63,9 @@
 #define FPGA_CHANNEL_BITS(channel) ((channel & 0x03) << 10)
 #define FPGA_BANK_BITS(bank) ((bank & 0x03) << 8)
 #define FPGA_ADDR_BITS(addr) (addr & 0xFF)
+
+#define FPGA_VOL_MASK(num)	(0x7 << (uint16_t)(3 * (num - 1)))
+#define FPGA_VOL_BITS(num, vol)	((vol & 0x7) << (uint16_t)(3 * (num - 1)))
 
 using namespace QP;
 using namespace FW;
@@ -80,7 +86,7 @@ public:
 	static QState WritingWave(FPGA * const me, QEvt const * const e);
 	
 	enum {
-		EVT_QUEUE_COUNT = 16,
+		EVT_QUEUE_COUNT = 32,
 		DEFER_QUEUE_COUNT = 4
 	};
 	QEvt const *m_evtQueueStor[EVT_QUEUE_COUNT];

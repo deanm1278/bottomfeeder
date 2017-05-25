@@ -90,6 +90,7 @@ enum {
 	FPGA_SET_PORTAMENTO_REQ,
 	FPGA_SET_ENABLE_REQ,
 	FPGA_WRITE_WAVE_CFM,
+	FPGA_WRITE_VOL_REQ,
 	
 	CAP_TOUCH_START_REQ,
 	CAP_TOUCH_START_CFM,
@@ -541,16 +542,14 @@ class FPGAStopCfm : public ErrorEvt {
 class FPGAWriteWaveFile : public Evt {
 	public:
 	
-	FPGAWriteWaveFile(const char *filename, uint8_t channel, uint16_t volume) :
-	Evt(FPGA_WRITE_WAVE_FILE), filename(filename), channel(channel), volume(volume) {}
+	FPGAWriteWaveFile(const char *filename, uint8_t channel) :
+	Evt(FPGA_WRITE_WAVE_FILE), filename(filename), channel(channel) {}
 	
 	const char *getFilename() const { return filename; }
 	uint8_t getChannel() const { return channel; }
-	uint16_t getVolume() const { return volume; }
 	private:
 	const char *filename;
 	uint8_t channel;
-	uint16_t volume;
 };
 
 class FPGAWritePWM : public Evt {
@@ -582,14 +581,14 @@ class FPGAWriteFS : public Evt {
 class FPGAWriteParamReq : public Evt {
 	public:
 	
-	FPGAWriteParamReq(uint8_t param, uint16_t value) :
+	FPGAWriteParamReq(uint8_t param, uint32_t value) :
 	Evt(FPGA_WRITE_PARAM_REQ), param(param), value(value) {}
 	
 	const uint8_t getParam() const { return param; }
-	const uint16_t getValue() const { return value; }
+	const uint32_t getValue() const { return value; }
 	private:
 	uint8_t param;
-	uint16_t value;
+	uint32_t value;
 };
 
 class FPGANotifyKeyPressed : public Evt {
@@ -622,6 +621,19 @@ public:
 	const uint16_t getEnable() const { return en; }
 private:
 	uint16_t en;
+};
+
+class FPGAWriteVolReq : public Evt {
+	public:
+	
+	FPGAWriteVolReq(uint8_t channel, uint16_t vol) :
+	Evt(FPGA_WRITE_VOL_REQ), channel(channel), vol(vol) {}
+	
+	const uint8_t getChannel() const { return channel; }
+	const uint16_t getVol() const { return vol; }
+	private:
+	uint8_t channel;
+	uint16_t vol;
 };
 
 /*********** END FPGA **************/

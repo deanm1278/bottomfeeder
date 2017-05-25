@@ -43,6 +43,7 @@ QState FPGA::InitialPseudoState(FPGA * const me, QEvt const * const e) {
 	me->subscribe(FPGA_NOTIFY_KEY_PRESSED);
 	me->subscribe(FPGA_SET_PORTAMENTO_REQ);
 	me->subscribe(FPGA_SET_ENABLE_REQ);
+	me->subscribe(FPGA_WRITE_VOL_REQ);
 	
 	me->subscribe(SD_READ_FILE_RESPONSE);
 	
@@ -109,7 +110,7 @@ QState FPGA::Stopped(FPGA * const me, QEvt const * const e) {
 			
 			digitalWrite(CRESET_B, HIGH);
 			
-			delay(500);
+			delay(1000);
 			
 			if(digitalRead(CDONE)){
 				SPI.begin();
@@ -155,7 +156,6 @@ QState FPGA::Started(FPGA * const me, QEvt const * const e) {
 			FPGAWriteWaveFile const &req = static_cast<FPGAWriteWaveFile const &>(*e);
 			
 			me->writeChannel = req.getChannel();
-			me->writeVolume = req.getVolume();
 			me->writePos = 0;
 			
 			char path[50];
@@ -192,8 +192,18 @@ QState FPGA::Started(FPGA * const me, QEvt const * const e) {
 			LOG_EVENT(e);
 			FPGAWriteParamReq const &req = static_cast<FPGAWriteParamReq const &>(*e);
 			
-			me->writeReg(FPGA_A_INTERVAL + req.getParam(), req.getValue());
+			uint8_t param = req.getParam();
 			
+			if(param == ATTACK || param == DECAY || param == RELEASE){
+				uint32_t val = (uint32_t)(req.getValue() >> 16);
+				me->writeReg(FPGA_A_INTERVAL_HIGH + param, val);
+				
+				val = (req.getValue() & 0xFFFF);
+				me->writeReg(FPGA_A_INTERVAL_HIGH + param + 1, val);
+			}
+			else{
+				me->writeReg(FPGA_A_INTERVAL_HIGH + param , req.getValue());
+			}
 			status = Q_HANDLED();
 			break;
 		}
@@ -218,6 +228,18 @@ QState FPGA::Started(FPGA * const me, QEvt const * const e) {
 			FPGASetEnableReq const &req = static_cast<FPGASetEnableReq const &>(*e);
 			
 			me->writeReg(FPGA_ENABLE, req.getEnable());
+			
+			status = Q_HANDLED();
+			break;
+		}
+		case FPGA_WRITE_VOL_REQ: {
+			LOG_EVENT(e);
+			FPGAWriteVolReq const &req = static_cast<FPGAWriteVolReq const &>(*e);
+			
+			uint16_t current = me->readReg(FPGA_VOL);
+			uint16_t toWrite = current &  ~(FPGA_VOL_MASK(req.getChannel()));
+			toWrite |= FPGA_VOL_BITS(req.getChannel(), req.getVol());
+			me->writeReg(FPGA_VOL, toWrite);
 			
 			status = Q_HANDLED();
 			break;
@@ -277,15 +299,20 @@ QState FPGA::WritingWave(FPGA * const me, QEvt const * const e) {
 					while(!me->SDBuffer.empty()){
 						buf[0] = me->SDBuffer.pop_front();
 						buf[1] = me->SDBuffer.pop_front();
-
+						
+						//TODO: fix in waveform gen script so we dont need to convert to sign/mag
 						uint16_t rawval = ((uint16_t)buf[1] << 8) | (uint16_t)buf[0];
-					
+						uint16_t toWrite = 0;
+						
 						val = reinterpret_cast<signed short&>(rawval);
 						
-						//adjust volume and convert to unsigned
-						uint32_t adj = map(val, -32768, 32767, 0 - me->writeVolume, me->writeVolume) + 32768;
+						if(val < 0) toWrite = (0x8000 | abs(val));
+						else toWrite = val;
 						
-						me->writeWaveSample(me->writeChannel, me->writePos, (uint16_t)adj);
+						//adjust volume and convert to unsigned
+						//uint32_t adj = map(val, -32768, 32767, 0 - me->writeVolume, me->writeVolume) + 32768;
+						
+						me->writeWaveSample(me->writeChannel, me->writePos, toWrite);
 						me->writePos++;
 					}
 				

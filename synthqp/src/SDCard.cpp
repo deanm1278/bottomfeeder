@@ -165,20 +165,20 @@ QState SDCard::Started(SDCard * const me, QEvt const * const e) {
 				}
 				else {
 					datafile.seekSet(exit_pos);
-				
+					
 					if(datafile.available()){
 						//don't overshoot the requested number of bytes
 						to_read = (CHUNK_SIZE > req.getNumBytes() - bytes_read ? req.getNumBytes() - bytes_read : CHUNK_SIZE);
-					
+						
 						this_read = datafile.read(&readBuf, to_read);
-					
+						
 						//push to the passed buffer
 						req.getBuf()->transfer_in(readBuf, this_read);
-					
+						
 						bytes_read += this_read;
 					}
 					else eof = true;
-				
+					
 					exit_pos = datafile.curPosition();
 					datafile.close();
 				}
@@ -198,7 +198,7 @@ QState SDCard::Started(SDCard * const me, QEvt const * const e) {
 			//LOG_EVENT(e);
 			
 			//toggle LED to show card activity
-			digitalWrite(13, !digitalRead(13));
+			digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 			
 			SdFile datafile;
 			uint16_t bytes_written = 0;

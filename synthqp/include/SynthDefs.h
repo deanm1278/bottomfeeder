@@ -48,11 +48,11 @@ enum {
 //ADSR params
 enum {
 	ATTACK = 0,
-	DECAY = 1,
-	RELEASE = 2,
-	SUSTAIN = 3,
-	CUTOFF_MIX = 4,
-	AMP_MIX = 5
+	DECAY = 2,
+	RELEASE = 4,
+	SUSTAIN = 6,
+	CUTOFF_MIX = 7,
+	AMP_MIX = 8
 };
 
 typedef enum ccType_t{

@@ -6,6 +6,7 @@
 #include "event.h"
 #include "noteDefs.h"
 #include "waveDefs.h"
+#include "envDefs.h"
 
 #include "bsp.h"
 
@@ -15,7 +16,7 @@ Q_DEFINE_THIS_FILE
 static byte sdbuf[SD_READ_MAX];
 
 wavetable Synth::waves[] = {wavetable(), wavetable(), wavetable()};
-cv Synth::cvs[] = {cv(), cv(), cv(), cv(), cv()};
+cv Synth::cvs[] = {cv(600, 4095), cv(), cv(), cv(), cv()};
 LFO Synth::lfos[] = {LFO(TC4), LFO(TC5)};
 struct note *Synth::notebuf[] = {NULL, NULL, NULL, NULL, NULL, NULL};
 struct CC_LOG Synth::cc_log[MAX_CC];
@@ -369,7 +370,7 @@ QState Synth::Monophonic(Synth * const me, QEvt const * const e) {
 			for(int i=0; i<NUM_CHANNELS; i++){
 				if(waves[i].UPDATE_BITS.wave){
 					Evt *evt;
-					evt = new FPGAWriteWaveFile(waves[i].filename, i, waves[i].VOL);
+					evt = new FPGAWriteWaveFile(waves[i].filename, i);
 					QF::PUBLISH(evt, me);
 					waves[i].UPDATE_BITS.wave = false;
 				}
@@ -406,11 +407,10 @@ QState Synth::Paraphonic(Synth * const me, QEvt const * const e) {
 			base->setTranspose(0);
 			for(int i=1; i<NUM_CHANNELS; i++){
 				wavetable *w = &me->waves[i];
-				w->VOL = base->VOL;
 				w->setTranspose(0);
 				w->stopNote();
 				
-				Evt *evt = new FPGAWriteWaveFile(base->filename, i, w->VOL);
+				Evt *evt = new FPGAWriteWaveFile(base->filename, i);
 			}
 			
 			//enable all subs
@@ -465,8 +465,7 @@ QState Synth::Paraphonic(Synth * const me, QEvt const * const e) {
 				for(int i=0; i<NUM_CHANNELS; i++){
 					Evt *evt;
 					waves[i].filename = w->filename;
-					waves[i].VOL = w->VOL;
-					evt = new FPGAWriteWaveFile(w->filename, i, w->VOL);
+					evt = new FPGAWriteWaveFile(w->filename, i);
 					QF::PUBLISH(evt, me);
 					waves[i].UPDATE_BITS.wave = false;
 				}
@@ -836,7 +835,7 @@ void Synth::flush(){
 		}
 		//write any necessary updates
 		if(c->UPDATE){
-			evt = new FPGAWritePWM(i, constrain(c->BASE + c->NET, 0, 4095));
+			evt = new FPGAWritePWM(i, constrain(c->BASE + c->NET, c->low, c->high));
 			QF::PUBLISH(evt, this);
 			
 			c->UPDATE = false;
@@ -1237,7 +1236,7 @@ void Synth::cc_cv(byte channel, byte value, struct CC_ARG *args){
 		struct CC_ARG *a = args;
 		int const &pwm = static_cast<int const &>(*a->args);
 		
-		cvs[pwm].setBase(map(value, 0, 127, 0, 4095));
+		cvs[pwm].setBase(value);
 	}
 }
 
@@ -1255,9 +1254,9 @@ void Synth::cc_transpose(byte channel, byte value, struct CC_ARG *args){
 
 void Synth::cc_volume(byte channel, byte value, struct CC_ARG *args){
     if(channel <= NUM_CHANNELS){
-		waves[channel - 1].setVol(map(value, 0, 127, 0, 32767));
-			
-		m_waveformTimer.rearm(800);
+		uint8_t vol = map(value, 0, 127, 7, 0);
+		Evt *evt = new FPGAWriteVolReq(channel, vol);
+		QF::PUBLISH(evt, me);
 	}
 }
 
@@ -1307,7 +1306,7 @@ void Synth::cc_env(byte channel, byte value, struct CC_ARG *args){
 				adsr.setParam(param, value);
 				break;
 			default:
-				adsr.setParam(param, map(value, 0, 127, 0, 65535));
+				adsr.setParam(param, linToLog22[value]);
 				break;
 		}
 	}

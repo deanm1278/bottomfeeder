@@ -2,7 +2,21 @@
 `define DATAWIDTH 16
 `define ADDRWIDTH 8
 `define PWM_DEPTH 12
-`define NUM_CHANNELS 21
+`define NUM_CHANNELS 24
+
+module VOLUME(
+	input 		clk,
+	input		[2:0] VOL,
+	input 		[`DATAWIDTH-1:0] in,
+	output		reg [`DATAWIDTH-1:0] out,
+);
+
+	always @(posedge clk) begin
+		if(in[15] == 1'b1) out <= 16'h8000 - (in[14:0] >> VOL);
+		else  out <= 16'h8000 + (in[14:0] >> VOL);
+	end
+
+endmodule
 
 module WAVETABLE(
   input		clk,
@@ -53,7 +67,7 @@ module WAVETABLE(
 		  latch_on <= 1'b1;
 	  end
       else if(dataRdy) begin
-          dlatch <= RDATA;
+		  dlatch <= RDATA;
 
           if( cnt == (8'hFF >> step) )begin
             rbank <= rbank + 1'b1;
@@ -83,21 +97,28 @@ module WAVETABLE(
     end
 	
 	assign SUB_OUT = (sub_en && latch_on ? SUB_STATE : 1'bz);
+	
+	//FOR SIMULATION ONLY
+	//assign SUB_OUT = (sub_en && latch_on ? SUB_STATE : 1'b0);
 	assign dout = (latch_on ? dlatch : 16'h8000);
   
 endmodule
 
 module GEN_REG(
   input     clk,
-  output    reg [`DATAWIDTH-1:0] GEN_OUT,
+  output    [`DATAWIDTH-1:0] GEN_OUT,
   input     [`DATAWIDTH-1:0] WDATA,
   input     WE,
   input     WCLK
 );
 
+  reg [`DATAWIDTH-1:0] out = 16'h0;
+
   always @(posedge WCLK) begin
-    if(WE) GEN_OUT <= WDATA;
+    if(WE) out <= WDATA;
   end
+  
+  assign GEN_OUT = out;
 
 endmodule
 
@@ -138,6 +159,38 @@ module NOISE(
   
 endmodule
 
+module TMR32(
+  input clk,
+  input [31:0] prescale,
+  input enable,
+  output fire
+);
+  
+  reg [31:0] cnt = 32'b0;
+  wire fireD;
+  reg f = 1'b0;
+  
+  always @(posedge clk)
+    begin
+      if(enable == 1'b0) cnt <= 1'b0;
+      else 
+        begin
+          if(cnt == prescale) cnt <= 1'b0;
+          else cnt <= cnt + 1'b1;
+        end
+    end
+  
+  always @(posedge clk)
+    begin
+      if(enable == 1'b0) f <= 1'b0;
+      else f <= fireD;
+    end
+  
+  assign fireD = (cnt == prescale);
+  assign fire = f;
+  
+endmodule
+
 module TMR(
   input clk,
   input [15:0] prescale,
@@ -172,9 +225,9 @@ endmodule
 
 module ADSR(
 	input clk,
-	input [`DATAWIDTH-1:0] A_INTERVAL,
-	input [`DATAWIDTH-1:0] D_INTERVAL,
-	input [`DATAWIDTH-1:0] R_INTERVAL,
+	input [31:0] A_INTERVAL,
+	input [31:0] D_INTERVAL,
+	input [31:0] R_INTERVAL,
 	
 	input [6:0] SUS_LVL,
 	
@@ -198,9 +251,9 @@ module ADSR(
 	wire a_fire, d_fire, r_fire;
 	
 	//timer for attack
-	TMR t_attack(clk, A_INTERVAL, a_enable, a_fire);
-	TMR t_decay(clk, D_INTERVAL, d_enable, d_fire);
-	TMR t_release(clk, R_INTERVAL, r_enable, r_fire);
+	TMR32 t_attack(clk, A_INTERVAL, a_enable, a_fire);
+	TMR32 t_decay(clk, D_INTERVAL, d_enable, d_fire);
+	TMR32 t_release(clk, R_INTERVAL, r_enable, r_fire);
 	
 	always @(posedge clk) begin
 		if(START_risingedge) begin
@@ -221,8 +274,7 @@ module ADSR(
 			else if(OUTVALUE == SUS_LVL + 1'b1) state <= 4'b0100; //sustain state
 		end
 		
-		else if(START_fallingedge && SUS_LVL != 16'h0) begin
-			OUTVALUE <= SUS_LVL;
+		else if(START_fallingedge && SUS_LVL != 16'h0 && RUNNING) begin
 			state <= 4'b1000; //release state
 		end
 		
