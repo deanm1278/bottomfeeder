@@ -12,7 +12,7 @@ module testbench;
   reg         [`DATAWIDTH-1:0] RDATA = 16'h0;		//value read from the ram
 
   wire        [`ADDRWIDTH-1:0] 	RADDR; //wavetable position (8 bit)
-  wire        [1:0] rbank;
+  wire        [1:0] RBANK;
   wire        RCLK;
   wire        [`DATAWIDTH-1:0] dout;
   wire        SUB_OUT;
@@ -21,10 +21,12 @@ module testbench;
 
   always @(posedge RCLK) RDATA <= RDATA + 2'b11;
 
+  /*
   initial begin
     $dumpfile("test.vcd");
     $dumpvars(0,testbench);
   end
+  */
   
   initial begin
  
@@ -38,22 +40,22 @@ module testbench;
     else $display("not ok 1 - RDATA is incorrect: %b", RDATA);
     if(RADDR == 8'h0) $display("ok 2 - RADDR is correct");
     else $display("not ok 2 - RADDR is incorrect: %b", RADDR);
-    if(rbank == 2'b0) $display("ok 3 - rbank is correct");
-    else $display("not ok 3 - rbank is incorrect: %b", rbank);
+    if(RBANK == 2'b0) $display("ok 3 - rbank is correct");
+    else $display("not ok 3 - rbank is incorrect: %b", RBANK);
 
     repeat (16) @(posedge clk);
 
-    if(dout == 16'h8001) $display("ok 4 - dout is correct");
+    if(dout == 16'h001) $display("ok 4 - dout is correct");
     else $display("not ok 4 - dout is incorrect: %b", dout);
     if(RADDR == 8'h1) $display("ok 5 - RADDR is correct");
     else $display("not ok 5 - RADDR is incorrect: %b", RADDR);
-    if(rbank == 2'b0) $display("ok 6 - rbank is correct");
-    else $display("not ok 6 - rbank is incorrect: %b", rbank);
+    if(RBANK == 2'b0) $display("ok 6 - rbank is correct");
+    else $display("not ok 6 - rbank is incorrect: %b", RBANK);
 
     repeat (15 + 1) @(posedge clk);
 	enable <= 1'b0;
 
-    if(dout == 16'h8003) $display("ok 7 - dout is correct");
+    if(dout == 16'h003) $display("ok 7 - dout is correct");
     else $display("not ok 7 - dout is incorrect: %b", dout);
     if(RADDR == 8'h2) $display("ok 8 - RADDR is correct");
     else $display("not ok 8 - RADDR is incorrect: %b", RADDR);
@@ -95,12 +97,6 @@ module testbench;
 	.	\step_input[1] (step[1]),
 	.	\step_input[2] (step[2]),
 	
-	.	\VOL[0] (VOL[0]),
-	.	\VOL[1] (VOL[1]),
-	.	\VOL[2] (VOL[2]),
-	.	\VOL[3] (VOL[3]),
-	.	\VOL[4] (VOL[4]),
-	
 	.	\RADDR[0] (RADDR[0]),
 	.	\RADDR[1] (RADDR[1]),
 	.	\RADDR[2] (RADDR[2]),
@@ -110,8 +106,8 @@ module testbench;
 	.	\RADDR[6] (RADDR[6]),
 	.	\RADDR[7] (RADDR[7]),
 	
-	.	\rbank[0] (rbank[0]),
-	.	\rbank[1] (rbank[1]),
+	.	\RBANK[0] (RBANK[0]),
+	.	\RBANK[1] (RBANK[1]),
 	
 	.	\RDATA[0] (RDATA[0]),
 	.	\RDATA[1] (RDATA[1]),
@@ -149,9 +145,8 @@ module testbench;
 `else
     .Fs_input(Fs),
     .step_input(step),
-	.VOL(VOL),
     .RADDR(RADDR),
-    .rbank(rbank),
+    .RBANK(RBANK),
     .RDATA(RDATA),
     .dout(dout)
 `endif

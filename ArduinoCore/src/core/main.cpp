@@ -58,6 +58,7 @@ void InitTraceBuffer()
 */
 
 int main( void )
+
 {
   init();
 

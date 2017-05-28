@@ -1,10 +1,10 @@
 module testbench;
   reg clk = 1;
 
-  reg [`DATAWIDTH-1:0] A_INTERVAL = 16'h1;
-  reg [`DATAWIDTH-1:0] D_INTERVAL = 16'h1;
-  reg [6:0] SUS_LVL = 16'h8;
-  reg [`DATAWIDTH-1:0] R_INTERVAL = 16'h1;
+  reg [31:0] A_INTERVAL = 32'h1;
+  reg [31:0] D_INTERVAL = 32'h1;
+  reg [6:0] SUS_LVL = 7'h8;
+  reg [31:0] R_INTERVAL = 32'h1;
   
   reg START = 1'b0;
   

@@ -8,13 +8,9 @@
 
 Q_DEFINE_THIS_FILE
 
-#define SD_READ_MAX 256
-static byte sdbuf[SD_READ_MAX];
-
 FPGA::FPGA() :
 QActive((QStateHandler)&FPGA::InitialPseudoState),
-m_id(FPGA_ID), m_name("FPGA"), settings(4000000, MSBFIRST, SPI_MODE0),
-SDBuffer(sdbuf, SD_READ_MAX) {}
+m_id(FPGA_ID), m_name("FPGA"), settings(4000000, MSBFIRST, SPI_MODE0) {}
 
 FPGA::~FPGA() {}
 
@@ -45,7 +41,7 @@ QState FPGA::InitialPseudoState(FPGA * const me, QEvt const * const e) {
 	me->subscribe(FPGA_SET_ENABLE_REQ);
 	me->subscribe(FPGA_WRITE_VOL_REQ);
 	
-	me->subscribe(SD_READ_FILE_RESPONSE);
+	me->subscribe(FLASH_CONFIG_READ_TO_LISTENER_DONE);
 	
 	return Q_TRAN(&FPGA::Root);
 }
@@ -142,6 +138,10 @@ QState FPGA::Started(FPGA * const me, QEvt const * const e) {
 			
 			//make sure the filter starts up
 			me->writeReg(FPGA_PWM0, 4095);
+			me->writeReg(FPGA_ENABLE, 0);
+			me->writeReg(FPGA_W0_FREQ, 0);
+			me->writeReg(FPGA_W1_FREQ, 0);
+			me->writeReg(FPGA_W2_FREQ, 0);
 			
 			status = Q_HANDLED();
 			break;
@@ -155,16 +155,8 @@ QState FPGA::Started(FPGA * const me, QEvt const * const e) {
 			LOG_EVENT(e);
 			FPGAWriteWaveFile const &req = static_cast<FPGAWriteWaveFile const &>(*e);
 			
+			me->writeNum = req.getnum();
 			me->writeChannel = req.getChannel();
-			me->writePos = 0;
-			
-			char path[50];
-			strcpy(path, WAVES_PATH);
-			strcat(path, req.getFilename());
-			
-			Evt const &r = EVT_CAST(*e);
-			Evt *evt = new SDReadFileReq(0, path, 0, SD_READ_MAX, &me->SDBuffer);
-			QF::PUBLISH(evt, me);
 			
 			status = Q_TRAN(&FPGA::WritingWave);
 			
@@ -211,7 +203,13 @@ QState FPGA::Started(FPGA * const me, QEvt const * const e) {
 			LOG_EVENT(e);
 			FPGANotifyKeyPressed const &req = static_cast<FPGANotifyKeyPressed const &>(*e);
 
-			me->writeReg(FPGA_KEY_PRESSED, req.getPressed());
+			uint16_t current = me->readReg(FPGA_ENABLE);
+			
+			if(req.getPressed()) current |= FPGA_KEY_PRESSED_BIT;
+			else current &= ~FPGA_KEY_PRESSED_BIT;
+			
+			me->writeReg(FPGA_ENABLE, current);
+			
 			status = Q_HANDLED();
 			break;
 		}
@@ -227,7 +225,12 @@ QState FPGA::Started(FPGA * const me, QEvt const * const e) {
 			LOG_EVENT(e);
 			FPGASetEnableReq const &req = static_cast<FPGASetEnableReq const &>(*e);
 			
-			me->writeReg(FPGA_ENABLE, req.getEnable());
+			uint16_t current = me->readReg(FPGA_ENABLE);
+			
+			current &= ~0x0F;
+			current |= req.getEnable();
+			
+			me->writeReg(FPGA_ENABLE, current);
 			
 			status = Q_HANDLED();
 			break;
@@ -265,73 +268,50 @@ QState FPGA::WritingWave(FPGA * const me, QEvt const * const e) {
 	switch (e->sig) {
 		case Q_ENTRY_SIG: {
 			LOG_EVENT(e);
+			
+			uint16_t current = me->readReg(FPGA_ENABLE);
+			uint16_t toWrite = current &  ~FPGA_WRITE_ENABLE_MASK;
+						
+			//set the channels to enable
+			toWrite |= FPGA_WRITE_ENABLE_CHANNEL(me->writeChannel);
+			toWrite |= FPGA_WRITE_ENABLE_BIT;
+						
+			me->writeReg(FPGA_ENABLE, toWrite);
+						
+			//request the flash config object to read us the wave
+			Evt *evt = new FlashConfigReadToListenerReq(me->writeNum);
+			QF::PUBLISH(evt, me);
+			
+			status = Q_HANDLED();
+			break;
+		}
+		case FLASH_CONFIG_READ_TO_LISTENER_DONE: {
+			LOG_EVENT(e);
+			//disable writing once flash has confirmed that the wave is written
+			uint16_t current = me->readReg(FPGA_ENABLE);
+					
+			current &= ~FPGA_WRITE_ENABLE_BIT;
+			me->writeReg(FPGA_ENABLE, current);
+					
+			status = Q_TRAN(&FPGA::Started);
+			break;
+		}
+		case FPGA_WRITE_WAVE_FILE:{
+			LOG_EVENT(e);
+			me->defer(&me->m_deferQueue, e);
+			
 			status = Q_HANDLED();
 			break;
 		}
 		case Q_EXIT_SIG: {
 			LOG_EVENT(e);
-			//recall any deferred events
 			while(me->recall(&me->m_deferQueue));
 			
 			status = Q_HANDLED();
 			break;
 		}
-		case FPGA_WRITE_WAVE_FILE: {
-			//defer this, we will resend it on exit
-			me->defer(&me->m_deferQueue, e);
+		case Q_INIT_SIG: {
 			status = Q_HANDLED();
-			break;
-		}
-		case SD_READ_FILE_RESPONSE: {
-			LOG_EVENT(e);
-			
-			SDReadFileResponse const &req = static_cast<SDReadFileResponse const &>(*e);
-			if(req.getBuf() == &me->SDBuffer){
-				//we know this read is for us
-				
-				if(req.getError()){
-					//oh well, lets just keep going it's fine
-					status = Q_TRAN(&FPGA::Started);
-				}
-				else{
-					signed short val;
-					byte buf[2];
-					while(!me->SDBuffer.empty()){
-						buf[0] = me->SDBuffer.pop_front();
-						buf[1] = me->SDBuffer.pop_front();
-						
-						//TODO: fix in waveform gen script so we dont need to convert to sign/mag
-						uint16_t rawval = ((uint16_t)buf[1] << 8) | (uint16_t)buf[0];
-						uint16_t toWrite = 0;
-						
-						val = reinterpret_cast<signed short&>(rawval);
-						
-						if(val < 0) toWrite = (0x8000 | abs(val));
-						else toWrite = val;
-						
-						//adjust volume and convert to unsigned
-						//uint32_t adj = map(val, -32768, 32767, 0 - me->writeVolume, me->writeVolume) + 32768;
-						
-						me->writeWaveSample(me->writeChannel, me->writePos, toWrite);
-						me->writePos++;
-					}
-				
-					if(req.getEof()){
-						Evt *evt = new Evt(FPGA_WRITE_WAVE_CFM);
-						QF::PUBLISH(evt, me);
-					
-						status = Q_TRAN(&FPGA::Started);
-					}
-					else{
-						//request more data
-						Evt const &r = EVT_CAST(*e);
-						Evt *evt = new SDReadFileReq(r.GetSeq(), req.getFilename(), req.getExitPos(), SD_READ_MAX, &me->SDBuffer);
-						QF::PUBLISH(evt, me);
-					
-						status = Q_HANDLED();
-					}
-				}
-			}
 			break;
 		}
 		default: {
@@ -340,26 +320,6 @@ QState FPGA::WritingWave(FPGA * const me, QEvt const * const e) {
 		}
 	}
 	return status;
-}
-
-void FPGA::writeWaveSample(uint16_t channel, uint16_t sample, uint16_t value){
-	uint16_t bank = floor(sample/256);
-	uint16_t addr = sample%256;
-	
-	//SerialUSB.println(value);
-	
-	uint16_t Byte1 = (uint16_t)FPGA_RW_BIT(1) | (uint16_t)FPGA_WRITE_TYPE_BIT(1)
-	| (uint16_t)FPGA_CHANNEL_BITS(channel)
-	| (uint16_t)FPGA_BANK_BITS(bank) | (uint16_t)FPGA_ADDR_BITS(addr);
-	
-	QF_CRIT_ENTRY();
-	SPI.beginTransaction (settings);
-	digitalWrite(FPGA_CS, LOW);
-	SPI.transfer16(Byte1);
-	SPI.transfer16(value);
-	digitalWrite(FPGA_CS, HIGH);
-	SPI.endTransaction();
-	QF_CRIT_EXIT();
 }
 
 void FPGA::writeReg(uint8_t reg, uint16_t value){

@@ -68,6 +68,10 @@ enum {
 	FLASH_CONFIG_WRITE_CONFIGURATION,
 	FLASH_CONFIG_VERIFY_CONFIGURATION_REQ,
 	FLASH_CONFIG_WRITE_DONE,
+	FLASH_CONFIG_WRITE_WAVEFORMS_REQ,
+	FLASH_CONFIG_READ_LFO_REQ,
+	FLASH_CONFIG_READ_TO_LISTENER_REQ,
+	FLASH_CONFIG_READ_TO_LISTENER_DONE,
 	
 	SD_START_REQ,
 	SD_START_CFM,
@@ -91,6 +95,7 @@ enum {
 	FPGA_SET_ENABLE_REQ,
 	FPGA_WRITE_WAVE_CFM,
 	FPGA_WRITE_VOL_REQ,
+	FPGA_SET_WRITE_ENABLE_REQ,
 	
 	CAP_TOUCH_START_REQ,
 	CAP_TOUCH_START_CFM,
@@ -104,7 +109,6 @@ enum {
 	SYNTH_STOP_CFM,
 	SYNTH_UPDATE_TIMER,
 	SYNTH_SET_CC_HANDLER,
-	SYNTH_WRITE_LFO_REQ,
 	SYNTH_SET_LFO_TARGET_REQ,
 	SYNTH_SET_LFO_RATE_REQ,
 	SYNTH_SET_MODE_PARAPHONIC_REQ,
@@ -314,19 +318,6 @@ class synthSetCCHandler : public Evt {
 	ccType_t type;
 	byte args[CC_ARGS_MAX_LENGTH];
 	int count; 
-};
-
-class synthWriteLFOReq : public Evt {
-	public:
-	
-	synthWriteLFOReq(uint8_t num, const char *filename) :
-	Evt(SYNTH_WRITE_LFO_REQ), num(num), filename(filename) {}
-	
-	uint8_t getNum() const { return num; }
-	const char *getFilename() const { return filename; }
-	private:
-	uint8_t num;
-	const char *filename;
 };
 
 class synthSetLFOTargetReq : public Evt {
@@ -542,13 +533,13 @@ class FPGAStopCfm : public ErrorEvt {
 class FPGAWriteWaveFile : public Evt {
 	public:
 	
-	FPGAWriteWaveFile(const char *filename, uint8_t channel) :
-	Evt(FPGA_WRITE_WAVE_FILE), filename(filename), channel(channel) {}
+	FPGAWriteWaveFile(uint8_t num, uint8_t channel) :
+	Evt(FPGA_WRITE_WAVE_FILE), num(num), channel(channel) {}
 	
-	const char *getFilename() const { return filename; }
+	uint8_t getnum() const { return num; }
 	uint8_t getChannel() const { return channel; }
 	private:
-	const char *filename;
+	uint8_t num;
 	uint8_t channel;
 };
 
@@ -691,6 +682,31 @@ class FlashConfigVerifyConfigurationReq : public Evt {
 	private:
 	const char *fw_path;
 };
+
+class FlashConfigReadLFOReq : public Evt {
+	public:
+	
+	FlashConfigReadLFOReq(uint8_t num, signed short *writeTo) :
+	Evt(FLASH_CONFIG_READ_LFO_REQ), num(num), writeTo(writeTo) { }
+	
+	uint8_t getNum() const { return num; }
+	signed short *getWriteTo() const { return writeTo; }
+	private:
+	uint8_t num;
+	signed short *writeTo;
+};
+
+class FlashConfigReadToListenerReq : public Evt {
+	public:
+	
+	FlashConfigReadToListenerReq(uint8_t num) :
+	Evt(FLASH_CONFIG_READ_TO_LISTENER_REQ), num(num) {}
+	
+	uint8_t getNum() const { return num; }
+	private:
+	uint8_t num;
+};
+
 
 /************ END FLASH CONFIG **********/
 

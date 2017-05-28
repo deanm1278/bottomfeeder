@@ -1,9 +1,7 @@
 module testbench;
   reg clk = 0;
-  reg [15:0] WDATA = {13'h3EC, 3'h3};
+  reg [15:0] TARGET = {13'h3EC, 3'h3};
   reg [15:0] PORT_STEP = 16'h4;
-  reg WE = 0;
-  reg WCLK = 0;
   wire [15:0] GEN_OUT;
 
   always #5 clk = ~clk;
@@ -15,20 +13,8 @@ module testbench;
     $display("1..1");
     repeat (5) @(posedge clk);
 
-    WE <= 1;                //set write enable
-
-    repeat (2) @(posedge clk);
-
-    WCLK <= 1;              //toggle write clock
-
-    repeat (5) @(posedge clk);
+	TARGET = {13'h7C6, 3'h4};
 	
-	WCLK <= 0;
-	WDATA = {13'h7C6, 3'h4};
-	
-	repeat (2) @(posedge clk);
-	
-	WCLK <= 1;
 	
 	repeat (200) @(posedge clk);
 	
@@ -42,9 +28,7 @@ module testbench;
   PORT uut (
     .clk(clk),
 	.PORT_STEP(PORT_STEP),
-    .WE(WE),
     .GEN_OUT(GEN_OUT),
-    .WDATA(WDATA),
-    .WCLK(WCLK)
+    .TARGET(TARGET)
   );
 endmodule

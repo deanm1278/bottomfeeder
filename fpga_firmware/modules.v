@@ -1,14 +1,14 @@
 `default_nettype none
 `define DATAWIDTH 16
-`define ADDRWIDTH 8
+`define ADDRWIDTH 11
 `define PWM_DEPTH 12
-`define NUM_CHANNELS 24
+`define NUM_CHANNELS 20
 
 module VOLUME(
 	input 		clk,
 	input		[2:0] VOL,
 	input 		[`DATAWIDTH-1:0] in,
-	output		reg [`DATAWIDTH-1:0] out,
+	output		reg [`DATAWIDTH-1:0] out
 );
 
 	always @(posedge clk) begin
@@ -19,15 +19,15 @@ module VOLUME(
 endmodule
 
 module WAVETABLE(
-  input		clk,
-  input         [`DATAWIDTH-1:0] Fs_input,
+  input			clk,
+  input         [12:0] Fs_input,
   input         [2:0] step_input,
   input			enable,
   input         sub_en,
-  output 	reg [`ADDRWIDTH-1:0] 	RADDR, //wavetable position (8 bit)
-  output	reg [1:0]	rbank,
-  input		[`DATAWIDTH-1:0] RDATA,		//value read from the ram
-  output	reg RCLK,
+  output 		[`ADDRWIDTH-1:0] 	RADDR, //wavetable position (8 bit)
+  output		[1:0]	RBANK,
+  input			[`DATAWIDTH-1:0] RDATA,		//value read from the ram
+  output		RCLK,
   output	    [`DATAWIDTH-1:0] dout,
   output        SUB_OUT
 );
@@ -41,6 +41,10 @@ module WAVETABLE(
   reg [2:0] step = 3'b0;
   
   reg SUB_STATE = 1'b0;
+  
+  reg [`ADDRWIDTH-1:0] raddr;
+  reg [1:0] rbank;
+  reg rclk;
   
   reg [2:0] enabler = 3'b111;  always @(posedge clk) enabler <= {enabler[1:0], enable};
   //detect enable rising edge
@@ -61,7 +65,7 @@ module WAVETABLE(
 	  if(enable_rising) begin
 		  Fs <= Fs_input;
 		  step <= step_input;
-          RADDR <= 0;
+          raddr <= 0;
           rbank <= 0;
           cnt <= 0;
 		  latch_on <= 1'b1;
@@ -72,7 +76,7 @@ module WAVETABLE(
           if( cnt == (8'hFF >> step) )begin
             rbank <= rbank + 1'b1;
             cnt <= 0;
-            RADDR <= 0;
+            raddr <= 0;
 			
             if(rbank == 2'b11) begin
 				SUB_STATE <= ~SUB_STATE;
@@ -84,7 +88,7 @@ module WAVETABLE(
 			end
           end else begin
             cnt <= cnt + 1'b1;
-            RADDR <= RADDR + (8'b1 << step);
+            raddr <= raddr + (8'b1 << step);
           end
         end
       end
@@ -92,8 +96,8 @@ module WAVETABLE(
   //set latches
   always @(posedge clk)
     begin
-      if(~latch_on) RCLK <= 1'b0;
-      else RCLK <= fire;
+      if(~latch_on) rclk <= 1'b0;
+      else rclk <= fire;
     end
 	
 	assign SUB_OUT = (sub_en && latch_on ? SUB_STATE : 1'bz);
@@ -101,25 +105,11 @@ module WAVETABLE(
 	//FOR SIMULATION ONLY
 	//assign SUB_OUT = (sub_en && latch_on ? SUB_STATE : 1'b0);
 	assign dout = (latch_on ? dlatch : 16'h8000);
+	
+	assign RBANK = rbank;
+	assign RADDR = raddr;
+	assign RCLK = rclk;
   
-endmodule
-
-module GEN_REG(
-  input     clk,
-  output    [`DATAWIDTH-1:0] GEN_OUT,
-  input     [`DATAWIDTH-1:0] WDATA,
-  input     WE,
-  input     WCLK
-);
-
-  reg [`DATAWIDTH-1:0] out = 16'h0;
-
-  always @(posedge WCLK) begin
-    if(WE) out <= WDATA;
-  end
-  
-  assign GEN_OUT = out;
-
 endmodule
 
 module PWM(
@@ -233,12 +223,12 @@ module ADSR(
 	
 	input START,
 	
-	output reg [6:0] OUTVALUE,
+	output [6:0] OUTVALUE,
 	output RUNNING
 );
 
 	//attack starts on START rising edge, release starts on START falling edge
-	reg [2:0] STARTr;  always @(posedge clk) STARTr <= {STARTr[1:0], START};
+	reg [2:0] STARTr = 3'b000;  always @(posedge clk) STARTr <= {STARTr[1:0], START};
 	wire START_risingedge = (STARTr[1:0]==2'b01);  // detect START rising edges
 	wire START_fallingedge = (STARTr[2:1]==2'b10);  // and falling edges
 	
@@ -250,6 +240,8 @@ module ADSR(
 	
 	wire a_fire, d_fire, r_fire;
 	
+	reg [6:0] outvalue = 7'h0;
+	
 	//timer for attack
 	TMR32 t_attack(clk, A_INTERVAL, a_enable, a_fire);
 	TMR32 t_decay(clk, D_INTERVAL, d_enable, d_fire);
@@ -257,54 +249,54 @@ module ADSR(
 	
 	always @(posedge clk) begin
 		if(START_risingedge) begin
-			OUTVALUE <= 0;
+			outvalue <= 0;
 			state <= 4'b0001; //attack state
 		end
 		else if(a_fire) begin
-			OUTVALUE <= OUTVALUE + 1'b1;
-			if(OUTVALUE == 7'b1111110) state <= 4'b0010; //decay state
+			outvalue <= outvalue + 1'b1;
+			if(outvalue == 7'b1111110) state <= 4'b0010; //decay state
 		end
 		else if(d_fire) begin
 			//decrement outvalue
-			OUTVALUE <= OUTVALUE - 1'b1;
+			outvalue <= outvalue - 1'b1;
 			
 			//this means sustain level is set to 0. exit here
-			if(OUTVALUE == 7'b1) state <= 4'b0000; //done state
+			if(outvalue == 7'b1) state <= 4'b0000; //done state
 			
-			else if(OUTVALUE == SUS_LVL + 1'b1) state <= 4'b0100; //sustain state
+			else if(outvalue == SUS_LVL + 1'b1) state <= 4'b0100; //sustain state
 		end
 		
-		else if(START_fallingedge && SUS_LVL != 16'h0 && RUNNING) begin
+		else if(START_fallingedge && SUS_LVL != 7'h0 && RUNNING) begin
 			state <= 4'b1000; //release state
 		end
 		
 		else if(r_fire) begin
 			//decrement output
-			OUTVALUE <= OUTVALUE - 1'b1;
-			if(OUTVALUE == 7'b1) state <= 4'b0000; //done state
+			outvalue <= outvalue - 1'b1;
+			if(outvalue == 7'b1) state <= 4'b0000; //done state
 		end
 		
 		//sustain should always be the sustain value
-		else if(state == 4'b0100) OUTVALUE <= SUS_LVL;
+		else if(s_enable) outvalue <= SUS_LVL;
 		
 	end
 	
 	assign RUNNING = (state != 4'b0000);
+	assign OUTVALUE = outvalue;
 
 endmodule
 
 module PORT(
   input     clk,
   input		[`DATAWIDTH-1:0] PORT_STEP,
-  output    reg [`DATAWIDTH-1:0] GEN_OUT,
-  input     [`DATAWIDTH-1:0] WDATA,
-  input     WE,
-  input     WCLK
+  output    [`DATAWIDTH-1:0] GEN_OUT,
+  input     [`DATAWIDTH-1:0] TARGET
 );
 
-  reg [`DATAWIDTH-1:0] TARGET;
   reg [12:0] fs_latch = 13'h0;
   reg [2:0] step_latch = 3'b0;
+  
+  reg [`DATAWIDTH-1:0] gen_out = 16'h0;
   
   wire fire;
   
@@ -313,10 +305,6 @@ module PORT(
   wire enable = (TARGET != 16'h0);
   
   TMR t(clk, PORT_STEP, 1'b1, fire);
-  
-  always @(posedge WCLK) begin
-    if(WE) TARGET <= WDATA;
-  end
   
   always @(posedge clk) begin
 	if((fs_latch == 13'b0 || PORT_STEP == 16'h0) && FS_TARGET != 13'h0) begin
@@ -353,7 +341,9 @@ module PORT(
 	end
   end
   
-  always @(posedge clk) GEN_OUT <= (enable ? {fs_latch[12:0], step_latch[2:0]} : 16'h0);
+  always @(posedge clk) gen_out <= (enable ? {fs_latch[12:0], step_latch[2:0]} : 16'h0);
+  
+  assign GEN_OUT = gen_out;
 
 endmodule
 
@@ -362,67 +352,168 @@ module MIX(
 	input [6:0] ENV,
 	input [`PWM_DEPTH-1:0] DC_PRE,
 	input [4:0] MUL,
-	output reg [`DATAWIDTH-1:0] DC_POST
+	output reg [`PWM_DEPTH-1:0] DC_POST
 );
 
 	reg [`DATAWIDTH-1:0] tmp = 16'h0;
-	wire [`DATAWIDTH-1:0] outval;
+	wire [`PWM_DEPTH-1:0] outval;
 	
 	always @(posedge clk) begin
 		tmp <= DC_PRE + (ENV * MUL);
 		DC_POST <= outval;
 	end
 	
-	assign outval = tmp > 16'hFFF ? 16'hFFF : tmp;
+	assign outval = tmp > 16'hFFF ? 12'hFFF : tmp[11:0];
 
 endmodule
 
-module DINTERP(
-  input 	clk,
-  input 	DATA_READY,
-  input		[31:0] DATA,
-  output 	reg [1:0] wbank,
-  output 	reg [`ADDRWIDTH-1:0] WADDR,
-  output 	reg [`NUM_CHANNELS-1:0] WE,
-  output 	reg [7:0] RE,
-  output 	reg WCLK,
-  output	reg [`DATAWIDTH-1:0] RDATA
+module REG_16(
+  input     clk,
+  output    reg [15:0] GEN_OUT,
+  input     [15:0] WDATA,
+  input     WE,
+  input     WCLK
 );
-  
-  //shift reg so we can know when all our data has settled
-  reg [1:0] shft = 2'b00;
 
-  always @(posedge clk) shft <= {shft[0], DATA_READY};
-  wire latch = (shft[1:0]==2'b10);
+  always @(posedge WCLK) begin
+    if(WE) GEN_OUT <= WDATA;
+  end
+
+endmodule
+
+module REG_12(
+  input     clk,
+  output    reg [11:0] GEN_OUT,
+  input     [11:0] WDATA,
+  input     WE,
+  input     WCLK
+);
+
+  always @(posedge WCLK) begin
+    if(WE) GEN_OUT <= WDATA;
+  end
+
+endmodule
+
+module REG_9(
+  input     clk,
+  output    reg [8:0] GEN_OUT,
+  input     [8:0] WDATA,
+  input     WE,
+  input     WCLK
+);
+
+  always @(posedge WCLK) begin
+    if(WE) GEN_OUT <= WDATA;
+  end
+
+endmodule
+
+module REG_7(
+  input     clk,
+  output    reg [6:0] GEN_OUT,
+  input     [6:0] WDATA,
+  input     WE,
+  input     WCLK
+);
+
+  always @(posedge WCLK) begin
+    if(WE) GEN_OUT <= WDATA;
+  end
+
+endmodule
+
+module REG_5(
+  input     clk,
+  output    reg [4:0] GEN_OUT,
+  input     [4:0] WDATA,
+  input     WE,
+  input     WCLK
+);
+
+  always @(posedge WCLK) begin
+    if(WE) GEN_OUT <= WDATA;
+  end
+
+endmodule
+
+module DINTERP_WAVE(
+	input	clk,
+	input	enable,
+	input	DATA_READY,
+	output  reg [3:0] WBANK,
+	output 	reg [`ADDRWIDTH-1:0] WADDR
+);
+
+  reg [1:0] dummyCnt = 2'b0;
   
   always @(posedge clk) begin
-	if(DATA_READY) begin
-        if(DATA[30]) begin //if this bit is set we are writing a waveform
-			wbank <= DATA[25:24]; //set bank
-			WADDR <= DATA[23:16]; //set address
-			RE <= 0;
-			WE <= (1 << DATA[29:26]);
-			RDATA <= DATA[15:0]; //set the data
-        end
-		else begin //this is a register
-			if(DATA[31]) begin //we are writing
-			  RE <= 0;
-			  WE <= (1 << DATA[29:22]);
+	if(~enable) begin
+		WBANK <= 4'b1;
+		WADDR <= 8'b0;
+		dummyCnt <= 2'b0;
+	end
+	else if(DATA_READY) begin
+		if(dummyCnt !== 2'h3) dummyCnt <= dummyCnt + 1'b1;
+		
+		else begin
+			if( WADDR == 8'hFF )begin
+				WBANK <= {WBANK[2:0], 1'b0};
+				WADDR <= 0;
+			end else begin
+				WADDR <= WADDR + 1'b1;
 			end
-			else begin //we are reading
-			  RE <= DATA[29:22];
-			  WE <= 0;
-			end
-			RDATA <= DATA[15:0]; //set the data
 		end
 	end
+  end
+	
+endmodule
+	
+module SPI_WAVE(
+	input		clk,
+	input		enable,
+	input		SCK,
+	input		MOSI,
+	input		SSEL,
+	output		reg [`DATAWIDTH-1:0] DATA_OUT,
+	output		reg DATA_READY
+);
 
-  end
-  
-  always @(posedge clk) begin
-    WCLK <= latch;
-  end
-  
+	reg [2:0] SCKr;  always @(posedge clk) SCKr <= {SCKr[1:0], SCK};
+	wire SCK_risingedge = (SCKr[2:1]==2'b01);  // now we can detect SCK rising edges
+	wire SCK_fallingedge = (SCKr[2:1]==2'b10);  // and falling edges
+
+	// and for MOSI
+	reg [1:0] MOSIr = 2'b00;  always @(posedge clk) MOSIr <= {MOSIr[0], MOSI};
+	wire MOSI_data = MOSIr[1];
+
+	// we handle SPI in 16-bits format, so we need a 4 bits counter to count the bits as they come in
+	reg [3:0] bitcnt = 4'h0;
+
+	reg byte_received = 1'b0;  // high when a byte has been received
+	reg [`DATAWIDTH-1:0] byte_data_received = 16'b0;
+
+	always @(posedge clk)
+	begin
+	  if(SSEL || ~enable)
+		bitcnt <= 4'b0000;
+		
+	  else if(SCK_risingedge) begin
+		bitcnt <= bitcnt + 1'b1;
+
+		// implement a shift-left register (since we receive the data MSB first)
+		byte_data_received <= {byte_data_received[14:0], MOSI_data};
+	  end
+	end
+
+	always @(posedge clk) byte_received <= ~SSEL && SCK_risingedge && (bitcnt==4'b1111);
+	always @(posedge clk) begin
+		if(byte_received) begin
+		  DATA_OUT <= byte_data_received;
+		end
+		DATA_READY <= byte_received;
+	end
+
 endmodule
 
 module SPI_SLAVE(
@@ -433,7 +524,7 @@ module SPI_SLAVE(
   	input		SSEL,
   	output		reg [31:0] DATA_OUT,
   	output		reg DATA_READY,
-        input           [`DATAWIDTH-1:0] READ_OUT
+	input       [`DATAWIDTH-1:0] READ_OUT
 );
   
 reg [2:0] SCKr;  always @(posedge clk) SCKr <= {SCKr[1:0], SCK};

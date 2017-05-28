@@ -36,7 +36,6 @@ class Synth : public QActive {
 	static QState Root(Synth * const me, QEvt const * const e);
 	static QState Stopped(Synth * const me, QEvt const * const e);
 	static QState Started(Synth * const me, QEvt const * const e);
-	static QState WritingLFO(Synth * const me, QEvt const * const e);
 	static QState LoadingPreset(Synth * const me, QEvt const * const e);
 	static QState StoringPreset(Synth * const me, QEvt const * const e);
 	

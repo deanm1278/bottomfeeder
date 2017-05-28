@@ -13,6 +13,10 @@ set_io S_MOSI 101
 set_io S_CS 106
 set_io S_MISO 104
 
+set_io R_SCK 70
+set_io R_MOSI 68
+set_io R_CS 71
+
 # Subs
 set_io SUB_OUT[0] 125
 set_io SUB_OUT[1] 130

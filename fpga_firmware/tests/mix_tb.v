@@ -4,7 +4,7 @@ module testbench;
   reg [`PWM_DEPTH-1:0] DC_PRE = 5;
   reg [4:0] MUL = 4;
   
-  wire [`DATAWIDTH-1:0] DC_POST;
+  wire [`PWM_DEPTH-1:0] DC_POST;
 
   always #1 clk = ~clk;
 

@@ -59,7 +59,9 @@ protected:
 	static QState Stopping(System * const me, QEvt const * const e);
 	static QState Starting(System * const me, QEvt const * const e);
     static QState Started(System * const me, QEvt const * const e);
+	
 	static QState WriteFirmware(System * const me, QEvt const * const e);
+	static QState WriteWaveforms(System * const me, QEvt const * const e);
 	
 	void HandleCfm(ErrorEvt const &e, uint8_t expectedCnt);
 

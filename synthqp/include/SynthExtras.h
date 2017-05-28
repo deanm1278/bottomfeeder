@@ -69,7 +69,7 @@ public:
 	LFO_TARGET *target = NULL;
 	uint8_t targetType = LFO_TARGET_NONE;
 	
-	const char *filename = "basic_sin.w";
+	uint8_t waveform_number = 2;
 	
 	int mapMax = 32767;
 	
@@ -242,7 +242,7 @@ public:
 	int TUNE = 0;						//for detuning
 	int TRANSPOSE = 0;
 
-	const char *filename = "basic_saw.w";
+	uint8_t waveform_number = 1;
 	
 	void setNote(struct note *n){ 
 		CurrentNote = n;
@@ -270,8 +270,8 @@ public:
 		TRANSPOSE = transpose;
 		setNote(CurrentNote);
 	};
-	void setWave(const char *fn){
-		filename = fn;
+	void setWave(uint8_t num){
+		waveform_number = num;
 		UPDATE_BITS.wave = true;
 	}
 };

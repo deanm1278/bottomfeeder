@@ -450,6 +450,9 @@ QState System::Started(System * const me, QEvt const * const e) {
 				if(c == 'f') 
 					status = Q_TRAN(&System::WriteFirmware);
 				
+				else if(c == 'w')
+					status = Q_TRAN(&System::WriteWaveforms);
+				
 				else if(c == 'v'){
 					evt = new FlashConfigVerifyConfigurationReq(FIRMWARE_PATH);
 					QF::PUBLISH(evt, me);
@@ -473,6 +476,72 @@ QState System::Started(System * const me, QEvt const * const e) {
         }
     }
     return status;
+}
+
+QState System::WriteWaveforms(System * const me, QEvt const * const e) {
+	QState status;
+	switch (e->sig) {
+		case Q_ENTRY_SIG: {
+			LOG_EVENT(e);
+			me->m_cfmCount = 0;
+			
+			Evt *evt = new FPGAStopReq(me->m_nextSequence++);
+			// TODO - Save sequence number for comparison.
+			QF::PUBLISH(evt, me);
+			
+			evt = new MIDIUARTStopReq(me->m_nextSequence++);
+			// TODO - Save sequence number for comparison.
+			QF::PUBLISH(evt, me);
+			
+			evt = new CapTouchStopReq(me->m_nextSequence++);
+			// TODO - Save sequence number for comparison.
+			QF::PUBLISH(evt, me);
+			
+			evt = new SynthStopReq(me->m_nextSequence++);
+			// TODO - Save sequence number for comparison.
+			QF::PUBLISH(evt, me);
+			
+			evt = new MIDIUSBStopReq(me->m_nextSequence++);
+			// TODO - Save sequence number for comparison.
+			QF::PUBLISH(evt, me);
+
+			status = Q_HANDLED();
+			break;
+		}
+		case Q_EXIT_SIG: {
+			LOG_EVENT(e);
+			status = Q_HANDLED();
+			break;
+		}
+		case MIDI_USB_STOP_CFM:
+		case SYNTH_STOP_CFM:
+		case FPGA_STOP_CFM:
+		case CAP_TOUCH_STOP_CFM:
+		case MIDI_UART_STOP_CFM: {
+			LOG_EVENT(e);
+			me->HandleCfm(ERROR_EVT_CAST(*e), 5);
+			status = Q_HANDLED();
+			break;
+		}
+		case SYSTEM_DONE: {
+			LOG_EVENT(e);
+			Evt *evt = new Evt(FLASH_CONFIG_WRITE_WAVEFORMS_REQ);
+			QF::PUBLISH(evt, me);
+			status = Q_HANDLED();
+			break;
+		}
+		
+		case FLASH_CONFIG_WRITE_DONE: {
+			LOG_EVENT(e);
+			status = Q_TRAN(&System::Stopping);
+			break;
+		}
+		default: {
+			status = Q_SUPER(&System::Root);
+			break;
+		}
+	}
+	return status;
 }
 
 QState System::WriteFirmware(System * const me, QEvt const * const e) {
