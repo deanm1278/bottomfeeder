@@ -1,14 +1,13 @@
 `default_nettype none
 `define DATAWIDTH 16
-`define ADDRWIDTH 11
+`define ADDRWIDTH 8
 `define PWM_DEPTH 12
-`define NUM_CHANNELS 20
 
 module VOLUME(
 	input 		clk,
 	input		[2:0] VOL,
 	input 		[`DATAWIDTH-1:0] in,
-	output		reg [`DATAWIDTH-1:0] out
+	output		reg [`DATAWIDTH-1:0] out,
 );
 
 	always @(posedge clk) begin
@@ -18,16 +17,17 @@ module VOLUME(
 
 endmodule
 
+
 module WAVETABLE(
-  input			clk,
-  input         [12:0] Fs_input,
+  input		clk,
+  input         [`DATAWIDTH-1:0] Fs_input,
   input         [2:0] step_input,
   input			enable,
   input         sub_en,
-  output 		[`ADDRWIDTH-1:0] 	RADDR, //wavetable position (8 bit)
-  output		[1:0]	RBANK,
-  input			[`DATAWIDTH-1:0] RDATA,		//value read from the ram
-  output		RCLK,
+  output 	reg [`ADDRWIDTH-1:0] 	RADDR, //wavetable position (8 bit)
+  output	reg [1:0]	rbank,
+  input		[`DATAWIDTH-1:0] RDATA,		//value read from the ram
+  output	reg RCLK,
   output	    [`DATAWIDTH-1:0] dout,
   output        SUB_OUT
 );
@@ -41,10 +41,6 @@ module WAVETABLE(
   reg [2:0] step = 3'b0;
   
   reg SUB_STATE = 1'b0;
-  
-  reg [`ADDRWIDTH-1:0] raddr;
-  reg [1:0] rbank;
-  reg rclk;
   
   reg [2:0] enabler = 3'b111;  always @(posedge clk) enabler <= {enabler[1:0], enable};
   //detect enable rising edge
@@ -65,7 +61,7 @@ module WAVETABLE(
 	  if(enable_rising) begin
 		  Fs <= Fs_input;
 		  step <= step_input;
-          raddr <= 0;
+          RADDR <= 0;
           rbank <= 0;
           cnt <= 0;
 		  latch_on <= 1'b1;
@@ -76,7 +72,7 @@ module WAVETABLE(
           if( cnt == (8'hFF >> step) )begin
             rbank <= rbank + 1'b1;
             cnt <= 0;
-            raddr <= 0;
+            RADDR <= 0;
 			
             if(rbank == 2'b11) begin
 				SUB_STATE <= ~SUB_STATE;
@@ -88,7 +84,7 @@ module WAVETABLE(
 			end
           end else begin
             cnt <= cnt + 1'b1;
-            raddr <= raddr + (8'b1 << step);
+            RADDR <= RADDR + (8'b1 << step);
           end
         end
       end
@@ -96,19 +92,17 @@ module WAVETABLE(
   //set latches
   always @(posedge clk)
     begin
-      if(~latch_on) rclk <= 1'b0;
-      else rclk <= fire;
+      if(~latch_on) RCLK <= 1'b0;
+      else RCLK <= fire;
     end
-	
-	assign SUB_OUT = (sub_en && latch_on ? SUB_STATE : 1'bz);
-	
-	//FOR SIMULATION ONLY
-	//assign SUB_OUT = (sub_en && latch_on ? SUB_STATE : 1'b0);
+
 	assign dout = (latch_on ? dlatch : 16'h8000);
 	
-	assign RBANK = rbank;
-	assign RADDR = raddr;
-	assign RCLK = rclk;
+`ifdef SIM
+	assign SUB_OUT = (sub_en && latch_on ? SUB_STATE : 1'b0);
+`else
+	assign SUB_OUT = (sub_en && latch_on ? SUB_STATE : 1'bz);
+`endif
   
 endmodule
 
@@ -131,7 +125,7 @@ module NOISE(
   input clk,
   input [`DATAWIDTH-1:0] prescale,
   input enable,
-  output NOISE_OUT
+  output reg NOISE_OUT
 );
   
   reg [31:0] r = 32'h3FA2C6;
@@ -145,7 +139,7 @@ module NOISE(
     noiselatch <= r[0];
   end
   
-  assign NOISE_OUT = (enable ? noiselatch : 1'bz);
+  always @(posedge clk) NOISE_OUT <= (enable ? noiselatch : 1'bz);
   
 endmodule
 
@@ -157,7 +151,7 @@ module TMR32(
 );
   
   reg [31:0] cnt = 32'b0;
-  wire fireD;
+  wire fireD = (cnt == prescale);
   reg f = 1'b0;
   
   always @(posedge clk)
@@ -176,7 +170,6 @@ module TMR32(
       else f <= fireD;
     end
   
-  assign fireD = (cnt == prescale);
   assign fire = f;
   
 endmodule
@@ -189,7 +182,7 @@ module TMR(
 );
   
   reg [15:0] cnt = 16'b0;
-  wire fireD;
+  wire fireD = (cnt == prescale);
   reg f = 1'b0;
   
   always @(posedge clk)
@@ -207,8 +200,7 @@ module TMR(
       if(enable == 1'b0) f <= 1'b0;
       else f <= fireD;
     end
-  
-  assign fireD = (cnt == prescale);
+	
   assign fire = f;
   
 endmodule
@@ -223,8 +215,8 @@ module ADSR(
 	
 	input START,
 	
-	output [6:0] OUTVALUE,
-	output RUNNING
+	output reg [6:0] OUTVALUE,
+	output reg RUNNING
 );
 
 	//attack starts on START rising edge, release starts on START falling edge
@@ -240,8 +232,6 @@ module ADSR(
 	
 	wire a_fire, d_fire, r_fire;
 	
-	reg [6:0] outvalue = 7'h0;
-	
 	//timer for attack
 	TMR32 t_attack(clk, A_INTERVAL, a_enable, a_fire);
 	TMR32 t_decay(clk, D_INTERVAL, d_enable, d_fire);
@@ -249,21 +239,21 @@ module ADSR(
 	
 	always @(posedge clk) begin
 		if(START_risingedge) begin
-			outvalue <= 0;
+			OUTVALUE <= 0;
 			state <= 4'b0001; //attack state
 		end
 		else if(a_fire) begin
-			outvalue <= outvalue + 1'b1;
-			if(outvalue == 7'b1111110) state <= 4'b0010; //decay state
+			OUTVALUE <= OUTVALUE + 1'b1;
+			if(OUTVALUE == 7'b1111110) state <= 4'b0010; //decay state
 		end
 		else if(d_fire) begin
 			//decrement outvalue
-			outvalue <= outvalue - 1'b1;
+			OUTVALUE <= OUTVALUE - 1'b1;
 			
 			//this means sustain level is set to 0. exit here
-			if(outvalue == 7'b1) state <= 4'b0000; //done state
+			if(OUTVALUE == 7'b1) state <= 4'b0000; //done state
 			
-			else if(outvalue == SUS_LVL + 1'b1) state <= 4'b0100; //sustain state
+			else if(OUTVALUE == SUS_LVL + 1'b1) state <= 4'b0100; //sustain state
 		end
 		
 		else if(START_fallingedge && SUS_LVL != 7'h0 && RUNNING) begin
@@ -272,31 +262,27 @@ module ADSR(
 		
 		else if(r_fire) begin
 			//decrement output
-			outvalue <= outvalue - 1'b1;
-			if(outvalue == 7'b1) state <= 4'b0000; //done state
+			OUTVALUE <= OUTVALUE - 1'b1;
+			if(OUTVALUE == 7'b1) state <= 4'b0000; //done state
 		end
 		
 		//sustain should always be the sustain value
-		else if(s_enable) outvalue <= SUS_LVL;
+		else if(s_enable) OUTVALUE <= SUS_LVL;
 		
+		RUNNING <= (state != 4'b0000);
 	end
-	
-	assign RUNNING = (state != 4'b0000);
-	assign OUTVALUE = outvalue;
 
 endmodule
 
 module PORT(
   input     clk,
   input		[`DATAWIDTH-1:0] PORT_STEP,
-  output    [`DATAWIDTH-1:0] GEN_OUT,
+  output    reg [`DATAWIDTH-1:0] GEN_OUT,
   input     [`DATAWIDTH-1:0] TARGET
 );
 
   reg [12:0] fs_latch = 13'h0;
   reg [2:0] step_latch = 3'b0;
-  
-  reg [`DATAWIDTH-1:0] gen_out = 16'h0;
   
   wire fire;
   
@@ -341,9 +327,7 @@ module PORT(
 	end
   end
   
-  always @(posedge clk) gen_out <= (enable ? {fs_latch[12:0], step_latch[2:0]} : 16'h0);
-  
-  assign GEN_OUT = gen_out;
+  always @(posedge clk) GEN_OUT <= (enable ? {fs_latch[12:0], step_latch[2:0]} : 16'h0);
 
 endmodule
 
@@ -484,7 +468,7 @@ module SPI_WAVE(
 	wire SCK_fallingedge = (SCKr[2:1]==2'b10);  // and falling edges
 
 	// and for MOSI
-	reg [1:0] MOSIr = 2'b00;  always @(posedge clk) MOSIr <= {MOSIr[0], MOSI};
+	reg [1:0] MOSIr;  always @(posedge clk) MOSIr <= {MOSIr[0], MOSI};
 	wire MOSI_data = MOSIr[1];
 
 	// we handle SPI in 16-bits format, so we need a 4 bits counter to count the bits as they come in

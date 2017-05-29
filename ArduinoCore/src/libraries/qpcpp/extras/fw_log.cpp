@@ -37,7 +37,7 @@
 
 Q_DEFINE_THIS_FILE
 
-#define ENABLE_LOGGING
+//#define ENABLE_LOGGING
 
 using namespace QP;
 

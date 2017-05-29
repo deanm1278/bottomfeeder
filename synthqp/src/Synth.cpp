@@ -144,6 +144,7 @@ QState Synth::Started(Synth * const me, QEvt const * const e) {
 		case Q_ENTRY_SIG: {
 			LOG_EVENT(e);
 			me->startTimer();
+			
 			status = Q_HANDLED();
 			break;
 		}
@@ -361,6 +362,7 @@ QState Synth::Paraphonic(Synth * const me, QEvt const * const e) {
 				w->stopNote();
 				
 				Evt *evt = new FPGAWriteWaveFile(base->waveform_number, i);
+				QF::PUBLISH(evt, me);
 			}
 			
 			//enable all subs

@@ -1,9 +1,8 @@
 `default_nettype none
 
 `define DATAWIDTH 16
-`define ADDRWIDTH 11
+`define ADDRWIDTH 8
 `define PWM_DEPTH 12
-`define NUM_CHANNELS 20
 
 
 //there should be one ram arbitrater for each wave bank (4 RAM modules)
@@ -132,8 +131,6 @@ output [2:0] SUB_OUT
 
   wire SPI_RDY, RCLK0, RCLK1, RCLK2, lock, DATA_READY_RAM;
   
-  wire ENV_RUNNING = 1'b1;
-  
   wire [`DATAWIDTH-1:0] PORT_STEP;
   wire [`DATAWIDTH-1:0] A_INTERVAL_H;
   wire [`DATAWIDTH-1:0] A_INTERVAL_L; 
@@ -161,7 +158,7 @@ output [2:0] SUB_OUT
   wire [4:0] ENV0_PWM0_MUL;
   wire [4:0] ENV0_PWM2_MUL;
   
-  reg [`DATAWIDTH-1:0] WD;
+  wire ENV_RUNNING;
   
 `ifdef SIM
   wire clkout = clk;
@@ -185,30 +182,29 @@ output [2:0] SUB_OUT
 `endif
 
   
-  wire [7:0] write_addr = WDATA[29:22];
+  wire [4:0] write_addr = WDATA[26:22];
   reg WCLK = 1'b0;
-  reg [`NUM_CHANNELS-1:0] WE = `NUM_CHANNELS'h0;
+  reg [31:0] WE = 32'h0;
+  reg [`DATAWIDTH-1:0] WD;
   
   reg [2:0] write_shft = 2'b00;
-  always @(posedge clk) write_shft <= {write_shft[0], SPI_RDY};
+  always @(posedge clkout) write_shft <= {write_shft[0], SPI_RDY};
   wire write_latch = (write_shft[1:0]==2'b10);
   
   //decode read enable and set spi out
-  always @(posedge clk) begin
+  always @(posedge clkout) begin
 	if(SPI_RDY) begin
 		if(WDATA[31]) begin
 			WE <= (1 << write_addr);
 			WD <= WDATA[16:0];
 		end
 		
-		else begin
-			WE <= `NUM_CHANNELS'h0;
-		end
+		else WE <= 32'h0;
 	end
 	WCLK <= write_latch;
   end
-  
-  always @(*) begin
+ 
+  always @(posedge clkout) begin
 	case(write_addr)
 	8'h00: READ_OUT <= FS0;
 	8'h01: READ_OUT <= FS1;
@@ -233,13 +229,13 @@ output [2:0] SUB_OUT
 	endcase
   end
   
-  REG_16 fs0(clkout, FS0, WD, WE[0], WCLK);
-  REG_16 fs1(clkout, FS1, WD, WE[1], WCLK);
-  REG_16 fs2(clkout, FS2, WD, WE[2], WCLK);
+  REG_16 fs0(clkout, PORT_TARGET0, WD, WE[0], WCLK);
+  REG_16 fs1(clkout, PORT_TARGET1, WD, WE[1], WCLK);
+  REG_16 fs2(clkout, PORT_TARGET2, WD, WE[2], WCLK);
   
-  REG_12 dc0(clkout, PWM_DC0, WD[11:0], WE[3], WCLK);
+  REG_12 dc0(clkout, PWM_DC_PRE_0, WD[11:0], WE[3], WCLK);
   REG_12 dc1(clkout, PWM_DC1, WD[11:0], WE[4], WCLK);
-  REG_12 dc2(clkout, PWM_DC2, WD[11:0], WE[5], WCLK);
+  REG_12 dc2(clkout, PWM_DC_PRE_2, WD[11:0], WE[5], WCLK);
   REG_12 dc3(clkout, PWM_DC3, WD[11:0], WE[6], WCLK);
   REG_12 dc4(clkout, PWM_DC4, WD[11:0], WE[7], WCLK);
   
@@ -264,20 +260,20 @@ output [2:0] SUB_OUT
   SPI_SLAVE spi(clkout, S_SCK, S_MOSI, S_MISO, S_CS, WDATA, SPI_RDY, READ_OUT);
   
   //for setting subosc active
-  //PORT sub_fs0(clkout, PORT_STEP, FS0, PORT_TARGET0);
-  //PORT sub_fs1(clkout, PORT_STEP, FS1, PORT_TARGET1);
-  //PORT sub_fs2(clkout, PORT_STEP, FS2, PORT_TARGET2);
+  PORT sub_fs0(clkout, PORT_STEP, FS0, PORT_TARGET0);
+  PORT sub_fs1(clkout, PORT_STEP, FS1, PORT_TARGET1);
+  PORT sub_fs2(clkout, PORT_STEP, FS2, PORT_TARGET2);
   
   
   //****** ENVELOPE 0 ******//
   
-  //ADSR env0(clkout, {A_INTERVAL_H, A_INTERVAL_L}, {D_INTERVAL_H, D_INTERVAL_L}, {R_INTERVAL_H, R_INTERVAL_L}, SUS_LVL, EN_REG[8], OUTVALUE, ENV_RUNNING);
+  ADSR env0(clkout, {A_INTERVAL_H, A_INTERVAL_L}, {D_INTERVAL_H, D_INTERVAL_L}, {R_INTERVAL_H, R_INTERVAL_L}, SUS_LVL, EN_REG[8], OUTVALUE, ENV_RUNNING);
   
   //mix for cutoff
-  //MIX mix_env0_pwm0(clkout, OUTVALUE, PWM_DC_PRE_0, ENV0_PWM0_MUL, PWM_DC0);
+  MIX mix_env0_pwm0(clkout, OUTVALUE, PWM_DC_PRE_0, ENV0_PWM0_MUL, PWM_DC0);
   
   //mix for VCA
-  //MIX mix_env0_pwm2(clkout, OUTVALUE, PWM_DC_PRE_2, ENV0_PWM2_MUL, PWM_DC2);
+  MIX mix_env0_pwm2(clkout, OUTVALUE, PWM_DC_PRE_2, ENV0_PWM2_MUL, PWM_DC2);
   
   //************************//
 
@@ -292,9 +288,9 @@ output [2:0] SUB_OUT
   VOLUME v1(clkout, VOL[5:3], vlink1, OUT1);
   VOLUME v2(clkout, VOL[8:6], vlink2, OUT2);
   
-  //SPI_WAVE sw(clkout, EN_REG[7], R_SCK, R_MOSI, R_CS, WDATA_RAM, DATA_READY_RAM);
+  SPI_WAVE sw(clkout, EN_REG[7], R_SCK, R_MOSI, R_CS, WDATA_RAM, DATA_READY_RAM);
   
-  //DINTERP_WAVE dwave(clkout, EN_REG[7], DATA_READY_RAM, WBANK, WADDR);
+  DINTERP_WAVE dwave(clkout, EN_REG[7], DATA_READY_RAM, WBANK, WADDR);
   
   //ram arbitrators
   RAM_ARB r0 (clkout, WDATA_RAM, EN_REG[4], WADDR, DATA_READY_RAM, RADDR0, RCLK0, RDATA0, WBANK, RBANK0);

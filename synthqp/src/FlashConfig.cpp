@@ -577,14 +577,13 @@ void FlashConfig::read(uint32_t addr, uint8_t *data, int n)
 void FlashConfig::readToListener(uint32_t addr, uint16_t n)
 {
 		QF_CRIT_ENTRY();
-		
 		uint8_t command[4] = { 0x0B, (uint8_t)(addr >> 16), (uint8_t)(addr >> 8), (uint8_t)addr };
 		SPI.beginTransaction(settings);
 		digitalWrite(SPI_SS_B, LOW);
+		
 		SPI.transfer(command, 4);
 		
-		//8 dummy cycles
-		//SPI.transfer(0x00);
+		SPI.transfer16(0x00);
 		
 		for(int i=0; i<n; i++){
 			SPI.transfer(0x00);

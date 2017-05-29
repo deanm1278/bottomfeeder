@@ -290,8 +290,9 @@ QState FPGA::WritingWave(FPGA * const me, QEvt const * const e) {
 			//disable writing once flash has confirmed that the wave is written
 			uint16_t current = me->readReg(FPGA_ENABLE);
 					
-			current &= ~FPGA_WRITE_ENABLE_BIT;
-			me->writeReg(FPGA_ENABLE, current);
+			uint16_t toWrite = current & ~FPGA_WRITE_ENABLE_BIT;
+			toWrite &= ~FPGA_WRITE_ENABLE_CHANNEL(me->writeChannel);
+			me->writeReg(FPGA_ENABLE, toWrite);
 					
 			status = Q_TRAN(&FPGA::Started);
 			break;
