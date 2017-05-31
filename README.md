@@ -8,6 +8,7 @@ Features include:
 - Full analog 4 pole resonanat low pass filter
 - ADSR envelope generator mappable to filter cutoff and VCA
 - Monophonic and 3 voice Paraphonic modes
+- Glide rate control
 - 2x LFO (also any user loadable waveform)
   - Mappable to many parameters including rate or depth of the other LFO
 - External input to filter
