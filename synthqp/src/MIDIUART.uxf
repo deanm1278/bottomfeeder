@@ -67,10 +67,7 @@ valign=top
 --
 entry /
 
-MIDI_UART_TIMEOUT/ reset_input_attributes()
-
 MIDI_UART_DATA_READY /
-		        m_timeout.rearm(100)
 		        
         if( read() ):
             ^event corresponding to parsed data. One of:

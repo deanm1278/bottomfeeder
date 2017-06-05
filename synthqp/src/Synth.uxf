@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <diagram program="umlet" version="14.2">
-  <zoom_level>8</zoom_level>
+  <zoom_level>7</zoom_level>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>56</x>
-      <y>0</y>
-      <w>1880</w>
-      <h>1920</h>
+      <x>392</x>
+      <y>182</y>
+      <w>1645</w>
+      <h>1386</h>
     </coordinates>
     <panel_attributes>Synth::Root
 --
@@ -19,10 +19,10 @@ valign=top
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>800</x>
-      <y>120</y>
-      <w>296</w>
-      <h>120</h>
+      <x>1043</x>
+      <y>287</y>
+      <w>259</w>
+      <h>105</h>
     </coordinates>
     <panel_attributes>Stopped
 --
@@ -36,10 +36,10 @@ valign=top
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>864</x>
-      <y>64</y>
-      <w>16</w>
-      <h>16</h>
+      <x>1099</x>
+      <y>238</y>
+      <w>14</w>
+      <h>14</h>
     </coordinates>
     <panel_attributes>type=initial</panel_attributes>
     <additional_attributes/>
@@ -47,10 +47,10 @@ valign=top
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>872</x>
-      <y>64</y>
-      <w>88</w>
-      <h>72</h>
+      <x>1106</x>
+      <y>238</y>
+      <w>77</w>
+      <h>63</h>
     </coordinates>
     <panel_attributes>lt=-&gt;&gt;&gt;</panel_attributes>
     <additional_attributes>10.0;10.0;90.0;10.0;90.0;70.0</additional_attributes>
@@ -58,10 +58,10 @@ valign=top
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>136</x>
-      <y>280</y>
-      <w>1728</w>
-      <h>1592</h>
+      <x>462</x>
+      <y>427</y>
+      <w>1512</w>
+      <h>1099</h>
     </coordinates>
     <panel_attributes>Started
 --
@@ -74,13 +74,10 @@ SYNTH_SET_CC_HANDLER/ setControlHandler(req.getCC(), req.getType(), req.getArgs(
 
 SYNTH_SET_LFO_TARGET_REQ/ remove pointer from old target, set new target
 
-PITCH_BEND_REQ/ bend = map(req.getValue(), 0, 16383, -100, 100), mark all channels to be updated
-
-FPGA_WRITE_WAVE_CFM/ clearNoteBuf()
+PITCH_BEND_REQ/ bend = map(req.getValue(), -8192, 8191, -100, 100), mark all channels to be updated
 
 CONTROL_CHANGE_REQ/ process the cc based on the cc[] array
 
-FPGA_WRITE_WAVE_CFM/ killNotes()
 valign=top
 </panel_attributes>
     <additional_attributes/>
@@ -88,10 +85,10 @@ valign=top
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1088</x>
-      <y>176</y>
-      <w>176</w>
-      <h>120</h>
+      <x>1295</x>
+      <y>336</y>
+      <w>154</w>
+      <h>105</h>
     </coordinates>
     <panel_attributes>lt=-&gt;&gt;&gt;</panel_attributes>
     <additional_attributes>200.0;130.0;200.0;10.0;10.0;10.0</additional_attributes>
@@ -99,10 +96,10 @@ valign=top
   <element>
     <id>Text</id>
     <coordinates>
-      <x>1552</x>
-      <y>432</y>
-      <w>368</w>
-      <h>72</h>
+      <x>1701</x>
+      <y>560</y>
+      <w>322</w>
+      <h>63</h>
     </coordinates>
     <panel_attributes>SYNTH_SET_MODE_PARAPHONIC_REQ
 style=wordwrap</panel_attributes>
@@ -111,10 +108,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>584</x>
-      <y>176</y>
-      <w>232</w>
-      <h>120</h>
+      <x>854</x>
+      <y>336</y>
+      <w>203</w>
+      <h>105</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
     <additional_attributes>10.0;130.0;10.0;10.0;270.0;10.0</additional_attributes>
@@ -122,126 +119,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Text</id>
     <coordinates>
-      <x>1384</x>
-      <y>976</y>
-      <w>264</w>
-      <h>72</h>
-    </coordinates>
-    <panel_attributes>SD_READ_FILE_RESPONSE/ write data to lfos[req.getNum()].values
-style=wordwrap</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>Text</id>
-    <coordinates>
-      <x>1400</x>
-      <y>1160</y>
-      <w>216</w>
-      <h>56</h>
-    </coordinates>
-    <panel_attributes>[ req.getEof() == FALSE ]/
-^SD_READ_FILE_REQ()
-style=wordwrap</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>UMLState</id>
-    <coordinates>
-      <x>680</x>
-      <y>968</y>
-      <w>696</w>
-      <h>232</h>
-    </coordinates>
-    <panel_attributes>WritingLFO
---
-entry/
-exit/ while(me-&gt;recall(&amp;me-&gt;m_deferQueue))
-
-SYNTH_SET_MODE_MONOPHONIC_REQ:
-SYNTH_SET_MODE_PARAPHONIC_REQ:
-SYNTH_WRITE_LFO_REQ:
-SYNTH_LOAD_PRESET_REQ:
-SYNTH_STORE_PRESET_REQ / defer(&amp;me-&gt;m_deferQueue, e)
-
-valign=top
-</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>128</x>
-      <y>1080</y>
-      <w>568</w>
-      <h>24</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>690.0;10.0;10.0;10.0</additional_attributes>
-  </element>
-  <element>
-    <id>Text</id>
-    <coordinates>
-      <x>160</x>
-      <y>1032</y>
-      <w>584</w>
-      <h>72</h>
-    </coordinates>
-    <panel_attributes>SYNTH_WRITE_LFO_REQ/
-^SD_READ_FILE_REQ(0, req.getFilename(), 0, SD_READ_MAX, &amp;SDBuffer)
-style=wordwrap</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>UMLSpecialState</id>
-    <coordinates>
-      <x>1576</x>
-      <y>1040</y>
-      <w>48</w>
-      <h>48</h>
-    </coordinates>
-    <panel_attributes>type=decision</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>1368</x>
-      <y>1056</y>
-      <w>224</w>
-      <h>24</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>260.0;10.0;10.0;10.0</additional_attributes>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>1616</x>
-      <y>1056</y>
-      <w>264</w>
-      <h>24</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>310.0;10.0;10.0;10.0</additional_attributes>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>1368</x>
-      <y>1080</y>
-      <w>248</w>
-      <h>80</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;80.0;290.0;80.0;290.0;10.0</additional_attributes>
-  </element>
-  <element>
-    <id>Text</id>
-    <coordinates>
-      <x>352</x>
-      <y>112</y>
-      <w>408</w>
-      <h>72</h>
+      <x>651</x>
+      <y>280</y>
+      <w>357</w>
+      <h>63</h>
     </coordinates>
     <panel_attributes>SYNTH_START_REQ/ setTimerFreq(SYNTH_TC, SYNTH_UPDATE_FREQ),
 ^SYNTH_START_CFM(SUCCESS)
@@ -249,24 +130,12 @@ style=wordwrap</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
-    <id>Text</id>
-    <coordinates>
-      <x>1648</x>
-      <y>1016</y>
-      <w>176</w>
-      <h>24</h>
-    </coordinates>
-    <panel_attributes>[ req.getEof() == TRUE ]
-style=wordwrap</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
     <id>UMLState</id>
     <coordinates>
-      <x>1232</x>
-      <y>576</y>
-      <w>544</w>
-      <h>328</h>
+      <x>1421</x>
+      <y>686</y>
+      <w>476</w>
+      <h>287</h>
     </coordinates>
     <panel_attributes>Paraphonic
 --
@@ -286,10 +155,10 @@ valign=top
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>680</x>
-      <y>576</y>
-      <w>504</w>
-      <h>328</h>
+      <x>938</x>
+      <y>686</y>
+      <w>441</w>
+      <h>287</h>
     </coordinates>
     <panel_attributes>Monophonic
 --
@@ -306,10 +175,10 @@ valign=top
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1088</x>
-      <y>408</y>
-      <w>16</w>
-      <h>16</h>
+      <x>1295</x>
+      <y>539</y>
+      <w>14</w>
+      <h>14</h>
     </coordinates>
     <panel_attributes>type=initial</panel_attributes>
     <additional_attributes/>
@@ -317,10 +186,10 @@ valign=top
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1088</x>
-      <y>408</y>
-      <w>96</w>
-      <h>72</h>
+      <x>1295</x>
+      <y>539</y>
+      <w>84</w>
+      <h>63</h>
     </coordinates>
     <panel_attributes>lt=-&gt;&gt;&gt;</panel_attributes>
     <additional_attributes>10.0;10.0;100.0;10.0;100.0;70.0</additional_attributes>
@@ -328,10 +197,10 @@ valign=top
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1536</x>
-      <y>296</y>
-      <w>24</w>
-      <h>296</h>
+      <x>1687</x>
+      <y>441</y>
+      <w>21</w>
+      <h>259</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
     <additional_attributes>10.0;350.0;10.0;10.0</additional_attributes>
@@ -339,10 +208,10 @@ valign=top
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>128</x>
-      <y>832</y>
-      <w>568</w>
-      <h>24</h>
+      <x>455</x>
+      <y>910</y>
+      <w>497</w>
+      <h>21</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
     <additional_attributes>690.0;10.0;10.0;10.0</additional_attributes>
@@ -350,10 +219,10 @@ valign=top
   <element>
     <id>Text</id>
     <coordinates>
-      <x>1160</x>
-      <y>128</y>
-      <w>368</w>
-      <h>72</h>
+      <x>1358</x>
+      <y>294</y>
+      <w>322</w>
+      <h>63</h>
     </coordinates>
     <panel_attributes>SYNTH_STOP_REQ
 / ^SYNTH_STOP_CFM(SUCCESS)
@@ -363,10 +232,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Text</id>
     <coordinates>
-      <x>248</x>
-      <y>800</y>
-      <w>368</w>
-      <h>72</h>
+      <x>560</x>
+      <y>882</y>
+      <w>322</w>
+      <h>63</h>
     </coordinates>
     <panel_attributes>SYNTH_SET_MODE_MONOPHONIC_REQ
 style=wordwrap</panel_attributes>
@@ -375,10 +244,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>680</x>
-      <y>1272</y>
-      <w>696</w>
-      <h>248</h>
+      <x>938</x>
+      <y>1015</y>
+      <w>609</w>
+      <h>217</h>
     </coordinates>
     <panel_attributes>LoadingPreset
 --
@@ -388,8 +257,7 @@ exit/ while(me-&gt;recall(&amp;me-&gt;m_deferQueue))
 CONTROL_CHANGE_REQ/ process the cc based on the cc[] array
 
 SYNTH_SET_MODE_MONOPHONIC_REQ:
-SYNTH_SET_MODE_PARAPHONIC_REQ:
-SYNTH_WRITE_LFO_REQ/
+SYNTH_SET_MODE_PARAPHONIC_REQ/
         defer(&amp;me-&gt;m_deferQueue, e)
 
 SYNTH_LOAD_PRESET_REQ:
@@ -403,10 +271,10 @@ valign=top
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>128</x>
-      <y>1384</y>
-      <w>568</w>
-      <h>24</h>
+      <x>455</x>
+      <y>1113</y>
+      <w>497</w>
+      <h>21</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
     <additional_attributes>690.0;10.0;10.0;10.0</additional_attributes>
@@ -414,10 +282,10 @@ valign=top
   <element>
     <id>Text</id>
     <coordinates>
-      <x>176</x>
-      <y>1360</y>
-      <w>584</w>
-      <h>72</h>
+      <x>497</x>
+      <y>1092</y>
+      <w>511</w>
+      <h>63</h>
     </coordinates>
     <panel_attributes>SYNTH_LOAD_PRESET_REQ/
 style=wordwrap</panel_attributes>
@@ -426,10 +294,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1624</x>
-      <y>1360</y>
-      <w>256</w>
-      <h>24</h>
+      <x>1764</x>
+      <y>1092</y>
+      <w>224</w>
+      <h>21</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
     <additional_attributes>300.0;10.0;10.0;10.0</additional_attributes>
@@ -437,10 +305,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Text</id>
     <coordinates>
-      <x>1656</x>
-      <y>1336</y>
-      <w>176</w>
-      <h>24</h>
+      <x>1792</x>
+      <y>1071</y>
+      <w>154</w>
+      <h>21</h>
     </coordinates>
     <panel_attributes>[ req.getEof() == TRUE ]
 style=wordwrap</panel_attributes>
@@ -449,10 +317,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1584</x>
-      <y>1344</y>
-      <w>48</w>
-      <h>48</h>
+      <x>1729</x>
+      <y>1078</y>
+      <w>42</w>
+      <h>42</h>
     </coordinates>
     <panel_attributes>type=decision</panel_attributes>
     <additional_attributes/>
@@ -460,10 +328,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1368</x>
-      <y>1384</y>
-      <w>256</w>
-      <h>88</h>
+      <x>1540</x>
+      <y>1113</y>
+      <w>224</w>
+      <h>77</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
     <additional_attributes>10.0;90.0;300.0;90.0;300.0;10.0</additional_attributes>
@@ -471,10 +339,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Text</id>
     <coordinates>
-      <x>1416</x>
-      <y>1472</y>
-      <w>216</w>
-      <h>48</h>
+      <x>1582</x>
+      <y>1190</y>
+      <w>189</w>
+      <h>42</h>
     </coordinates>
     <panel_attributes>[ req.getEof() == FALSE ]/
 ^SD_READ_FILE_REQ()
@@ -484,10 +352,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Text</id>
     <coordinates>
-      <x>1384</x>
-      <y>1312</y>
-      <w>264</w>
-      <h>72</h>
+      <x>1554</x>
+      <y>1050</y>
+      <w>231</w>
+      <h>63</h>
     </coordinates>
     <panel_attributes>SD_READ_FILE_RESPONSE/ ^CONTROL_CHANGE_REQ()
 style=wordwrap</panel_attributes>
@@ -496,10 +364,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1368</x>
-      <y>1360</y>
-      <w>232</w>
-      <h>24</h>
+      <x>1540</x>
+      <y>1092</y>
+      <w>203</w>
+      <h>21</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
     <additional_attributes>270.0;10.0;10.0;10.0</additional_attributes>
@@ -507,10 +375,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Text</id>
     <coordinates>
-      <x>176</x>
-      <y>1664</y>
-      <w>584</w>
-      <h>72</h>
+      <x>497</x>
+      <y>1358</y>
+      <w>511</w>
+      <h>63</h>
     </coordinates>
     <panel_attributes>SYNTH_STORE_PRESET_REQ
 style=wordwrap</panel_attributes>
@@ -519,10 +387,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>128</x>
-      <y>1688</y>
-      <w>560</w>
-      <h>24</h>
+      <x>455</x>
+      <y>1379</y>
+      <w>490</w>
+      <h>21</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
     <additional_attributes>680.0;10.0;10.0;10.0</additional_attributes>
@@ -530,10 +398,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>672</x>
-      <y>1576</y>
-      <w>696</w>
-      <h>232</h>
+      <x>931</x>
+      <y>1281</y>
+      <w>609</w>
+      <h>203</h>
     </coordinates>
     <panel_attributes>StoringPreset
 --
@@ -542,7 +410,6 @@ exit/ while(me-&gt;recall(&amp;me-&gt;m_deferQueue))
 
 SYNTH_SET_MODE_MONOPHONIC_REQ:
 SYNTH_SET_MODE_PARAPHONIC_REQ:
-SYNTH_WRITE_LFO_REQ:
 SYNTH_LOAD_PRESET_REQ:
 SYNTH_STORE_PRESET_REQ / defer(&amp;me-&gt;m_deferQueue, e)
 valign=top
@@ -552,10 +419,10 @@ valign=top
   <element>
     <id>Text</id>
     <coordinates>
-      <x>1376</x>
-      <y>1608</y>
-      <w>264</w>
-      <h>72</h>
+      <x>1547</x>
+      <y>1309</y>
+      <w>231</w>
+      <h>63</h>
     </coordinates>
     <panel_attributes>SD_WRITE_FILE_RESPONSE/ 
 try to load up more CCs
@@ -565,10 +432,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1360</x>
-      <y>1664</y>
-      <w>232</w>
-      <h>24</h>
+      <x>1533</x>
+      <y>1358</y>
+      <w>203</w>
+      <h>21</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
     <additional_attributes>270.0;10.0;10.0;10.0</additional_attributes>
@@ -576,10 +443,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1360</x>
-      <y>1688</y>
-      <w>256</w>
-      <h>88</h>
+      <x>1533</x>
+      <y>1379</y>
+      <w>224</w>
+      <h>77</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
     <additional_attributes>10.0;90.0;300.0;90.0;300.0;10.0</additional_attributes>
@@ -587,10 +454,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Text</id>
     <coordinates>
-      <x>1408</x>
-      <y>1776</y>
-      <w>216</w>
-      <h>48</h>
+      <x>1575</x>
+      <y>1456</y>
+      <w>189</w>
+      <h>42</h>
     </coordinates>
     <panel_attributes>[ more CCs to write ]/
 ^SD_WRITE_FILE_REQ()
@@ -600,10 +467,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1576</x>
-      <y>1648</y>
-      <w>48</w>
-      <h>48</h>
+      <x>1722</x>
+      <y>1344</y>
+      <w>42</w>
+      <h>42</h>
     </coordinates>
     <panel_attributes>type=decision</panel_attributes>
     <additional_attributes/>
@@ -611,10 +478,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Text</id>
     <coordinates>
-      <x>1648</x>
-      <y>1640</y>
-      <w>176</w>
-      <h>24</h>
+      <x>1785</x>
+      <y>1337</y>
+      <w>154</w>
+      <h>21</h>
     </coordinates>
     <panel_attributes>[ no more CCs to write ]
 style=wordwrap</panel_attributes>
@@ -623,10 +490,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1616</x>
-      <y>1664</y>
-      <w>264</w>
-      <h>24</h>
+      <x>1757</x>
+      <y>1358</y>
+      <w>231</w>
+      <h>21</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
     <additional_attributes>310.0;10.0;10.0;10.0</additional_attributes>
@@ -634,10 +501,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1144</x>
-      <y>464</y>
-      <w>48</w>
-      <h>48</h>
+      <x>1344</x>
+      <y>588</y>
+      <w>42</w>
+      <h>42</h>
     </coordinates>
     <panel_attributes>type=decision</panel_attributes>
     <additional_attributes/>
@@ -645,10 +512,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1184</x>
-      <y>480</y>
-      <w>200</w>
-      <h>112</h>
+      <x>1379</x>
+      <y>602</y>
+      <w>175</w>
+      <h>98</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
     <additional_attributes>230.0;120.0;230.0;10.0;10.0;10.0</additional_attributes>
@@ -656,10 +523,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>960</x>
-      <y>480</y>
-      <w>200</w>
-      <h>112</h>
+      <x>1183</x>
+      <y>602</y>
+      <w>175</w>
+      <h>98</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
     <additional_attributes>10.0;120.0;10.0;10.0;230.0;10.0</additional_attributes>
@@ -667,10 +534,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Text</id>
     <coordinates>
-      <x>968</x>
-      <y>456</y>
-      <w>176</w>
-      <h>24</h>
+      <x>1190</x>
+      <y>581</y>
+      <w>154</w>
+      <h>21</h>
     </coordinates>
     <panel_attributes>[ cc_log[MODE] &lt; 64 ]
 style=wordwrap</panel_attributes>
@@ -679,10 +546,10 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Text</id>
     <coordinates>
-      <x>1216</x>
-      <y>456</y>
-      <w>176</w>
-      <h>24</h>
+      <x>1407</x>
+      <y>581</y>
+      <w>154</w>
+      <h>21</h>
     </coordinates>
     <panel_attributes>[ cc_log[MODE] &gt;= 63 ]
 style=wordwrap</panel_attributes>

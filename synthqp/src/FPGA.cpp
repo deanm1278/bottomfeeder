@@ -285,28 +285,38 @@ QState FPGA::WritingWave(FPGA * const me, QEvt const * const e) {
 			status = Q_HANDLED();
 			break;
 		}
-		case FLASH_CONFIG_READ_TO_LISTENER_DONE: {
+		case Q_EXIT_SIG: {
 			LOG_EVENT(e);
-			//disable writing once flash has confirmed that the wave is written
+			
+			//disable writing
 			uint16_t current = me->readReg(FPGA_ENABLE);
-					
+						
 			uint16_t toWrite = current & ~FPGA_WRITE_ENABLE_BIT;
 			toWrite &= ~FPGA_WRITE_ENABLE_CHANNEL(me->writeChannel);
 			me->writeReg(FPGA_ENABLE, toWrite);
-					
-			status = Q_TRAN(&FPGA::Started);
-			break;
-		}
-		case FPGA_WRITE_WAVE_FILE:{
-			LOG_EVENT(e);
-			me->defer(&me->m_deferQueue, e);
+			
+			while(me->recall(&me->m_deferQueue));
 			
 			status = Q_HANDLED();
 			break;
 		}
-		case Q_EXIT_SIG: {
+		case FLASH_CONFIG_READ_TO_LISTENER_DONE: {
 			LOG_EVENT(e);
-			while(me->recall(&me->m_deferQueue));
+			
+			status = Q_TRAN(&FPGA::Started);
+			
+			break;
+		}
+		case FPGA_WRITE_FS:
+		case FPGA_NOTIFY_KEY_PRESSED:
+		case FPGA_WRITE_PWM:
+		case FPGA_WRITE_PARAM_REQ:
+		case FPGA_SET_PORTAMENTO_REQ:
+		case FPGA_SET_ENABLE_REQ:
+		case FPGA_WRITE_VOL_REQ:
+		case FPGA_WRITE_WAVE_FILE:{
+			LOG_EVENT(e);
+			me->defer(&me->m_deferQueue, e);
 			
 			status = Q_HANDLED();
 			break;
@@ -340,6 +350,7 @@ uint16_t FPGA::readReg(uint8_t reg){
 	uint16_t Byte1 = FPGA_RW_BIT(0) |FPGA_REG_MASK(reg);
 	uint16_t read;
 	
+	QF_CRIT_ENTRY();
 	SPI.beginTransaction (settings);
 	digitalWrite(FPGA_CS, LOW);
 	SPI.transfer16(Byte1);
@@ -352,6 +363,7 @@ uint16_t FPGA::readReg(uint8_t reg){
 	read = SPI.transfer16(0x00);
 	digitalWrite(FPGA_CS, HIGH);
 	SPI.endTransaction();
+	QF_CRIT_EXIT();
 	
 	return read;
 }

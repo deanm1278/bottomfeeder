@@ -197,7 +197,7 @@ void QF::onStartup(void) {
 	NVIC_SetPriority(EIC_IRQn, EIC_PRIO);
 	NVIC_SetPriority(TC3_IRQn, UPDATE_TMR_PRIO);
 	NVIC_SetPriority(TC4_IRQn, LFO_TIMER_PRIO);
-	NVIC_SetPriority(TC5_IRQn, LFO_TIMER_PRIO);
+	NVIC_SetPriority(TC5_IRQn, LFO_TIMER2_PRIO);
 	NVIC_SetPriority(USB_IRQn, USB_PRIO);
     
     // set priorities of ALL ISRs used in the system, see NOTE00

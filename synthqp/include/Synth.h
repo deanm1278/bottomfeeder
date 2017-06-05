@@ -52,8 +52,6 @@ class Synth : public QActive {
 	uint8_t m_id;
 	char const * m_name;
 	
-	QTimeEvt m_waveformTimer;
-	
 private:
 	void flush();
 	void startTimer();

@@ -3,131 +3,131 @@
 
 const char *waveforms[] = {
   NULL,
- "basic_saw.w",//1
- "basic_sin.w",//2
- "basic_squ.w",//3
- "basic_tri.w",//4
- "birds1.w",//5
- "birds2.w",//6
- "birds3.w",//7
- "bit1.w",//8
- "bit2.w",//9
- "bit3.w",//10
- "blend1.w",//11
- "blend2.w",//12
- "blend3.w",//13
- "blend4.w",//14
- "blend5.w",//15
- "cello1.w",//16
- "cello2.w",//17
- "cello3.w",//18
- "clari1.w",//19
- "clari2.w",//20
- "clari3.w",//21
- "clav1.w",//22
- "clav2.w",//23
- "clav3.w",//24
- "dbass1.w",//25
- "dbass2.w",//26
- "dbass3.w",//27
- "distorted1.w",//28
- "distorted2.w",//29
- "distorted3.w",//30
- "ebass1.w",//31
- "ebass2.w",//32
- "ebass3.w",//33
- "eorgan1.w",//34
- "eorgan2.w",//35
- "eorgan3.w",//36
- "eorgan4.w",//37
- "epiano1.w",//38
- "epiano2.w",//39
- "epiano3.w",//40
- "epiano4.w",//41
- "epiano5.w",//42
- "flute1.w",//43
- "flute2.w",//44
- "flute3.w",//45
- "granular1.w",//46
- "granular2.w",//47
- "granular3.w",//48
- "guitara1.w",//49
- "guitara2.w",//50
- "misc1.w",//51
- "misc10.w",//52
- "misc11.w",//53
- "misc12.w",//54
- "misc13.w",//55
- "misc14.w",//56
- "misc15.w",//57
- "misc2.w",//58
- "misc3.w",//59
- "misc4.w",//60
- "misc5.w",//61
- "misc6.w",//62
- "misc7.w",//63
- "misc8.w",//64
- "misc9.w",//65
- "oscchip1.w",//66
- "oscchip2.w",//67
- "oscchip3.w",//68
- "overtone1.w",//69
- "overtone2.w",//70
- "overtone3.w",//71
- "overtone4.w",//72
- "overtone5.w",//73
- "piano1.w",//74
- "piano2.w",//75
- "piano3.w",//76
- "saw1.w",//77
- "saw2.w",//78
- "saw3.w",//79
- "saw4.w",//80
- "saw5.w",//81
- "sawb1.w",//82
- "sawgap1.w",//83
- "sawgap2.w",//84
- "sawr1.w",//85
- "saws6.w",//86
- "sax1.w",//87
- "sax2.w",//88
- "sax3.w",//89
- "sinharm01.w",//90
- "sinharm02.w",//91
- "sinharm03.w",//92
- "sinharm04.w",//93
- "sinharm05.w",//94
- "sinharm06.w",//95
- "sinharm07.w",//96
- "sinharm08.w",//97
- "sinharm09.w",//98
- "sinharm10.w",//99
- "sinharm11.w",//100
- "sinharm12.w",//101
- "squ1.w",//102
- "squ2.w",//103
- "squ3.w",//104
- "squ4.w",//105
- "squ5.w",//106
- "squ6.w",//107
- "squ7.w",//108
- "squr1.w",//109
- "squr2.w",//110
- "theremin1.w",//111
- "theremin2.w",//112
- "theremin3.w",//113
- "vgame1.w",//114
- "vgame2.w",//115
- "vgame3.w",//116
- "vgsaw.w",//117
- "vgsin.w",//118
- "vgsq.w",//119
- "vgtri.w",//120
- "violin1.w",//121
- "violin2.w",//122
- "violin3.w",//123
- "voice1.w",//124
- "voice2.w",//125
- "voice3.w",//126
+"basic_saw.w",//1
+"basic_sin.w",//2
+"basic_squ.w",//3
+"basic_tri.w",//4
+"bsaw_0001.w",//5
+"bsaw_0002.w",//6
+"bsaw_0003.w",//7
+"bsaw_0004.w",//8
+"bsaw_0005.w",//9
+"bsaw_0006.w",//10
+"distorted_0008.w",//11
+"distorted_0009.w",//12
+"distorted_0010.w",//13
+"distorted_0011.w",//14
+"distorted_0012.w",//15
+"distorted_0013.w",//16
+"distorted_0014.w",//17
+"distorted_0015.w",//18
+"distorted_0016.w",//19
+"distorted_0017.w",//20
+"distorted_0018.w",//21
+"distorted_0019.w",//22
+"distorted_0020.w",//23
+"distorted_0021.w",//24
+"distorted_0022.w",//25
+"epiano_0009.w",//26
+"epiano_0037.w",//27
+"epiano_0046.w",//28
+"epiano_0056.w",//29
+"epiano_0065.w",//30
+"epiano_0071.w",//31
+"gapsaw_0021.w",//32
+"gapsaw_0022.w",//33
+"gapsaw_0023.w",//34
+"gapsaw_0024.w",//35
+"gapsaw_0025.w",//36
+"gapsaw_0026.w",//37
+"gapsaw_0027.w",//38
+"gapsaw_0028.w",//39
+"rAsymSqu_21.w",//40
+"rAsymSqu_22.w",//41
+"rAsymSqu_23.w",//42
+"rAsymSqu_24.w",//43
+"rAsymSqu_25.w",//44
+"rAsymSqu_26.w",//45
+"rSymSqu_01.w",//46
+"rSymSqu_02.w",//47
+"rSymSqu_03.w",//48
+"rSymSqu_04.w",//49
+"rSymSqu_05.w",//50
+"rSymSqu_06.w",//51
+"rSymSqu_07.w",//52
+"rSymSqu_08.w",//53
+"rSymSqu_09.w",//54
+"rSymSqu_10.w",//55
+"R_asym_saw_19.w",//56
+"R_asym_saw_20.w",//57
+"R_asym_saw_21.w",//58
+"R_asym_saw_22.w",//59
+"R_asym_saw_23.w",//60
+"R_asym_saw_24.w",//61
+"R_asym_saw_25.w",//62
+"R_asym_saw_26.w",//63
+"R_sym_saw_01.w",//64
+"R_sym_saw_02.w",//65
+"R_sym_saw_03.w",//66
+"R_sym_saw_04.w",//67
+"R_sym_saw_05.w",//68
+"R_sym_saw_06.w",//69
+"R_sym_saw_07.w",//70
+"R_sym_saw_08.w",//71
+"R_sym_saw_09.w",//72
+"R_sym_saw_10.w",//73
+"saw_0001.w",//74
+"saw_0002.w",//75
+"saw_0003.w",//76
+"saw_0004.w",//77
+"saw_0005.w",//78
+"saw_0006.w",//79
+"saw_0007.w",//80
+"saw_0008.w",//81
+"saw_0009.w",//82
+"sinharm01.w",//83
+"sin_0001.w",//84
+"sin_0002.w",//85
+"sin_0003.w",//86
+"sin_0004.w",//87
+"sin_0005.w",//88
+"sin_0006.w",//89
+"sin_0007.w",//90
+"sin_0008.w",//91
+"sin_0009.w",//92
+"sin_0010.w",//93
+"sin_0011.w",//94
+"sin_0012.w",//95
+"squ_0011.w",//96
+"squ_0012.w",//97
+"squ_0013.w",//98
+"squ_0014.w",//99
+"squ_0015.w",//100
+"squ_0016.w",//101
+"squ_0017.w",//102
+"squ_0018.w",//103
+"squ_0019.w",//104
+"squ_0020.w",//105
+"squ_0021.w",//106
+"squ_0022.w",//107
+"squ_0023.w",//108
+"squ_0024.w",//109
+"squ_0025.w",//110
+"squ_0026.w",//111
+"squ_0027.w",//112
+"squ_0028.w",//113
+"squ_0029.w",//114
+"squ_0030.w",//115
+"squ_0031.w",//116
+"squ_0032.w",//117
+"squ_0033.w",//118
+"theremin1.w",//119
+"tri_0007.w",//120
+"tri_0008.w",//121
+"tri_0009.w",//122
+"tri_0010.w",//123
+"tri_0011.w",//124
+"tri_0012.w",//125
+"tri_0013.w",//126
  NULL
 };

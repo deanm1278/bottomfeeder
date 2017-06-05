@@ -153,8 +153,8 @@ QState SDCard::Started(SDCard * const me, QEvt const * const e) {
 
 			//read bytes in chunks until either end of file or requested number of bytes has been read
 			while(bytes_read < req.getNumBytes() && !eof && !error){
-				//QF_CRIT_ENTRY();
-				QF_INT_DISABLE();
+				QF_CRIT_ENTRY();
+				//QF_INT_DISABLE();
 				
 				char fn[50];
 				strcpy(fn, req.getFilename());
@@ -183,8 +183,8 @@ QState SDCard::Started(SDCard * const me, QEvt const * const e) {
 					datafile.close();
 				}
 				
-				//QF_CRIT_EXIT();
-				QF_INT_ENABLE();
+				QF_CRIT_EXIT();
+				//QF_INT_ENABLE();
 			}
 			
 			//publish response that will be handled by whoever requested the data
@@ -211,8 +211,8 @@ QState SDCard::Started(SDCard * const me, QEvt const * const e) {
 
 			//read bytes in chunks until either end of file or requested number of bytes has been read
 			while(bytes_written < req.getNumBytes() && !error){
-				//QF_CRIT_ENTRY();
-				QF_INT_DISABLE();
+				QF_CRIT_ENTRY();
+				//QF_INT_DISABLE();
 				
 				char fn[50];
 				strcpy(fn, req.getFilename());
@@ -237,8 +237,8 @@ QState SDCard::Started(SDCard * const me, QEvt const * const e) {
 					datafile.close();
 				}
 				
-				//QF_CRIT_EXIT();
-				QF_INT_ENABLE();
+				QF_CRIT_EXIT();
+				//QF_INT_ENABLE();
 			}
 			
 			//publish response that will be handled by whoever requested the write

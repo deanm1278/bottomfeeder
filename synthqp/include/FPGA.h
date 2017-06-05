@@ -85,7 +85,7 @@ public:
 	
 	enum {
 		EVT_QUEUE_COUNT = 32,
-		DEFER_QUEUE_COUNT = 4
+		DEFER_QUEUE_COUNT = 16
 	};
 	QEvt const *m_evtQueueStor[EVT_QUEUE_COUNT];
 	QEvt const *m_deferQueueStor[DEFER_QUEUE_COUNT];

@@ -151,8 +151,6 @@ protected:
 	QEvt const *m_evtQueueStor[EVT_QUEUE_COUNT];
 	uint8_t m_id;
 	char const * m_name;
-	
-	QTimeEvt m_timeout;
 		
 private:
 	

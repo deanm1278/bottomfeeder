@@ -117,7 +117,7 @@ output [2:0] SUB_OUT
 
   wire [`ADDRWIDTH-1:0] WADDR;
   wire [`DATAWIDTH-1:0] RDATA0, RDATA1, RDATA2, WDATA_RAM;
-  wire [31:0] WDATA;
+  (* keep *) wire [31:0] WDATA;
   reg [`DATAWIDTH-1:0] READ_OUT = 16'h0;
   
   wire [1:0] RBANK0, RBANK1, RBANK2;
@@ -132,11 +132,11 @@ output [2:0] SUB_OUT
   wire SPI_RDY, RCLK0, RCLK1, RCLK2, lock, DATA_READY_RAM;
   
   wire [`DATAWIDTH-1:0] PORT_STEP;
-  wire [`DATAWIDTH-1:0] A_INTERVAL_H;
+  wire [5:0] A_INTERVAL_H;
   wire [`DATAWIDTH-1:0] A_INTERVAL_L; 
-  wire [`DATAWIDTH-1:0] D_INTERVAL_H;
+  wire [5:0] D_INTERVAL_H;
   wire [`DATAWIDTH-1:0] D_INTERVAL_L;
-  wire [`DATAWIDTH-1:0] R_INTERVAL_H; 
+  wire [5:0] R_INTERVAL_H; 
   wire [`DATAWIDTH-1:0] R_INTERVAL_L;
   wire [`DATAWIDTH-1:0] PORT_TARGET0;
   wire [`DATAWIDTH-1:0] PORT_TARGET1;
@@ -184,7 +184,7 @@ output [2:0] SUB_OUT
   
   wire [4:0] write_addr = WDATA[26:22];
   reg WCLK = 1'b0;
-  reg [31:0] WE = 32'h0;
+  (* keep *) reg [31:0] WE = 32'h0;
   reg [`DATAWIDTH-1:0] WD;
   
   reg [2:0] write_shft = 2'b00;
@@ -242,11 +242,11 @@ output [2:0] SUB_OUT
   REG_9 vol(clkout, VOL, WD[8:0], WE[8], WCLK);
   REG_9 en(clkout, EN_REG, WD[8:0], WE[9], WCLK);
   
-  REG_16 attack_h(clkout, A_INTERVAL_H, WD, WE[10], WCLK);
+  REG_6 attack_h(clkout, A_INTERVAL_H, WD[5:0], WE[10], WCLK);
   REG_16 attack_l(clkout, A_INTERVAL_L, WD, WE[11], WCLK);
-  REG_16 decay_h(clkout, D_INTERVAL_H, WD, WE[12], WCLK);
+  REG_6 decay_h(clkout, D_INTERVAL_H, WD[5:0], WE[12], WCLK);
   REG_16 decay_l(clkout, D_INTERVAL_L, WD, WE[13], WCLK);
-  REG_16 release_h(clkout, R_INTERVAL_H, WD, WE[14], WCLK);
+  REG_6 release_h(clkout, R_INTERVAL_H, WD[5:0], WE[14], WCLK);
   REG_16 release_l(clkout, R_INTERVAL_L, WD, WE[15], WCLK);
   
   REG_7 sus(clkout, SUS_LVL, WD[6:0], WE[16], WCLK);
@@ -303,6 +303,6 @@ output [2:0] SUB_OUT
   PWM p3 (clkout, PWM_OUT[3], PWM_DC3);
   PWM p4 (clkout, PWM_OUT[4], PWM_DC4);
   
-  NOISE n (clkout, {3'b000, ( FS0[15:3] >> (3'h7 - FS0[2:0]) )}, (EN_REG[3] && ENV_RUNNING), NOISE_OUT);
+  NOISE n (clkout, 16'h1D4C, (EN_REG[3] && ENV_RUNNING), NOISE_OUT);
 
 endmodule

@@ -7,7 +7,7 @@
       <x>0</x>
       <y>0</y>
       <w>1804</w>
-      <h>1397</h>
+      <h>1661</h>
     </coordinates>
     <panel_attributes>System::Root
 --
@@ -182,7 +182,7 @@ valign=top
   <element>
     <id>UMLState</id>
     <coordinates>
-      <x>55</x>
+      <x>187</x>
       <y>1056</y>
       <w>913</w>
       <h>264</h>
@@ -205,7 +205,7 @@ valign=top
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>506</x>
+      <x>638</x>
       <y>946</y>
       <w>33</w>
       <h>132</h>
@@ -216,7 +216,7 @@ valign=top
   <element>
     <id>Text</id>
     <coordinates>
-      <x>528</x>
+      <x>682</x>
       <y>990</y>
       <w>374</w>
       <h>33</h>
@@ -228,20 +228,20 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>957</x>
+      <x>1089</x>
       <y>660</y>
-      <w>539</w>
+      <w>407</w>
       <h>539</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>470.0;10.0;470.0;470.0;10.0;470.0</additional_attributes>
+    <additional_attributes>350.0;10.0;350.0;470.0;10.0;470.0</additional_attributes>
   </element>
   <element>
     <id>Text</id>
     <coordinates>
-      <x>1155</x>
+      <x>1122</x>
       <y>1144</y>
-      <w>253</w>
+      <w>506</w>
       <h>33</h>
     </coordinates>
     <panel_attributes>FLASH_CONFIG_WRITE_DONE
@@ -298,7 +298,7 @@ style=wordwrap</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1617</x>
-      <y>1243</y>
+      <y>1540</y>
       <w>44</w>
       <h>44</h>
     </coordinates>
@@ -309,22 +309,91 @@ style=wordwrap</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>1628</x>
-      <y>1276</y>
+      <y>1573</y>
       <w>33</w>
-      <h>143</h>
+      <h>110</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;110.0</additional_attributes>
+    <additional_attributes>10.0;10.0;10.0;80.0</additional_attributes>
   </element>
   <element>
     <id>Text</id>
     <coordinates>
-      <x>1474</x>
-      <y>1320</y>
+      <x>1463</x>
+      <y>1540</y>
       <w>253</w>
       <h>33</h>
     </coordinates>
     <panel_attributes>SYSTEM_FAIL
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>55</x>
+      <y>1353</y>
+      <w>913</w>
+      <h>264</h>
+    </coordinates>
+    <panel_attributes>WriteWaveforms
+--
+entry/ ^FPGA_STOP_REQ
+       ^MIDI_UART_STOP_REQ
+       ^CAP_TOUCH_STOP_REQ
+       ^SYNTH_STOP_REQ
+       ^MIDI_USB_STOP_REQ
+
+SYSTEM_DONE/
+       ^FLASH_CONFIG_WRITE_WAVEFORMS_REQ
+
+valign=top
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>99</x>
+      <y>946</y>
+      <w>33</w>
+      <h>429</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;370.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>132</x>
+      <y>990</y>
+      <w>374</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>SYSTEM_WRITE_WAVEFORMS_REQ
+style=wordwrap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>957</x>
+      <y>660</y>
+      <w>649</w>
+      <h>869</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>570.0;10.0;570.0;770.0;10.0;770.0</additional_attributes>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1034</x>
+      <y>1463</y>
+      <w>506</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>FLASH_CONFIG_WRITE_DONE
 style=wordwrap</panel_attributes>
     <additional_attributes/>
   </element>

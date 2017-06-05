@@ -1,6 +1,7 @@
 //AUTO GENERATED. DO NOT MODIFY
 #include "envDefs.h"
-const uint32_t linToLog22[] = {10,
+const uint32_t linToLog22[] = {100,
+	1000,
 	10000,
 	10494,
 	11014,

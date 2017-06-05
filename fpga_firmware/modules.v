@@ -28,7 +28,7 @@ module WAVETABLE(
   output	reg [1:0]	rbank,
   input		[`DATAWIDTH-1:0] RDATA,		//value read from the ram
   output	reg RCLK,
-  output	    [`DATAWIDTH-1:0] dout,
+  output        [`DATAWIDTH-1:0] dout,
   output        SUB_OUT
 );
   
@@ -143,15 +143,15 @@ module NOISE(
   
 endmodule
 
-module TMR32(
+module TMR22(
   input clk,
-  input [31:0] prescale,
+  input [21:0] prescale,
   input enable,
   output fire
 );
   
-  reg [31:0] cnt = 32'b0;
-  wire fireD = (cnt == prescale);
+  reg [22:0] cnt = 23'h0;
+  wire fireD = (cnt >= prescale);
   reg f = 1'b0;
   
   always @(posedge clk)
@@ -159,7 +159,7 @@ module TMR32(
       if(enable == 1'b0) cnt <= 1'b0;
       else 
         begin
-          if(cnt == prescale) cnt <= 1'b0;
+          if(fireD) cnt <= 1'b0;
           else cnt <= cnt + 1'b1;
         end
     end
@@ -207,9 +207,9 @@ endmodule
 
 module ADSR(
 	input clk,
-	input [31:0] A_INTERVAL,
-	input [31:0] D_INTERVAL,
-	input [31:0] R_INTERVAL,
+	input [21:0] A_INTERVAL,
+	input [21:0] D_INTERVAL,
+	input [21:0] R_INTERVAL,
 	
 	input [6:0] SUS_LVL,
 	
@@ -220,54 +220,58 @@ module ADSR(
 );
 
 	//attack starts on START rising edge, release starts on START falling edge
-	reg [2:0] STARTr = 3'b000;  always @(posedge clk) STARTr <= {STARTr[1:0], START};
+	reg [2:0] STARTr;  always @(posedge clk) STARTr <= {STARTr[1:0], START};
 	wire START_risingedge = (STARTr[1:0]==2'b01);  // detect START rising edges
 	wire START_fallingedge = (STARTr[2:1]==2'b10);  // and falling edges
 	
-	reg [3:0] state = 4'b0;
-	wire a_enable = (state == 4'b0001);
-	wire d_enable = (state == 4'b0010);
-	wire s_enable = (state == 4'b0100);
-	wire r_enable = (state == 4'b1000);
+	reg [2:0] state = 3'b0;
+	wire a_enable = (state == 3'h1);
+	wire d_enable = (state == 3'h2);
+	wire s_enable = (state == 3'h3);
+	wire r_enable = (state == 4'h4);
 	
 	wire a_fire, d_fire, r_fire;
 	
 	//timer for attack
-	TMR32 t_attack(clk, A_INTERVAL, a_enable, a_fire);
-	TMR32 t_decay(clk, D_INTERVAL, d_enable, d_fire);
-	TMR32 t_release(clk, R_INTERVAL, r_enable, r_fire);
+	TMR22 t_attack(clk, A_INTERVAL, a_enable, a_fire);
+	TMR22 t_decay(clk, D_INTERVAL, d_enable, d_fire);
+	TMR22 t_release(clk, R_INTERVAL, r_enable, r_fire);
 	
 	always @(posedge clk) begin
+		
 		if(START_risingedge) begin
-			OUTVALUE <= 0;
-			state <= 4'b0001; //attack state
+			OUTVALUE <= 7'h0;
+			state <= 3'h1; //attack state
 		end
-		else if(a_fire) begin
-			OUTVALUE <= OUTVALUE + 1'b1;
-			if(OUTVALUE == 7'b1111110) state <= 4'b0010; //decay state
-		end
-		else if(d_fire) begin
-			//decrement outvalue
-			OUTVALUE <= OUTVALUE - 1'b1;
-			
-			//this means sustain level is set to 0. exit here
-			if(OUTVALUE == 7'b1) state <= 4'b0000; //done state
-			
-			else if(OUTVALUE == SUS_LVL + 1'b1) state <= 4'b0100; //sustain state
-		end
-		
 		else if(START_fallingedge && SUS_LVL != 7'h0 && RUNNING) begin
-			state <= 4'b1000; //release state
+			state <= 3'h4; //release state
 		end
 		
-		else if(r_fire) begin
-			//decrement output
-			OUTVALUE <= OUTVALUE - 1'b1;
-			if(OUTVALUE == 7'b1) state <= 4'b0000; //done state
-		end
+		else begin
 		
-		//sustain should always be the sustain value
-		else if(s_enable) OUTVALUE <= SUS_LVL;
+			if(a_fire) begin
+				OUTVALUE <= OUTVALUE + 1'b1;
+				if(OUTVALUE == 7'b1111110) state <= 3'h2; //decay state
+			end
+			else if(d_fire) begin
+				//decrement outvalue
+				OUTVALUE <= OUTVALUE - 1'b1;
+				
+				//this means sustain level is set to 0. exit here
+				if(OUTVALUE == 7'b1) state <= 3'h0; //done state
+				
+				else if(OUTVALUE == SUS_LVL + 1'b1) state <= 3'h3; //sustain state
+			end
+			else if(r_fire) begin
+				//decrement output
+				OUTVALUE <= OUTVALUE - 1'b1;
+				if(OUTVALUE == 7'b1) state <= 3'h0; //done state
+			end
+			
+			//sustain should always be the sustain value
+			else if(s_enable) OUTVALUE <= SUS_LVL;
+		
+		end
 		
 		RUNNING <= (state != 4'b0000);
 	end
@@ -407,6 +411,20 @@ module REG_7(
 
 endmodule
 
+module REG_6(
+  input     clk,
+  output    reg [5:0] GEN_OUT,
+  input     [5:0] WDATA,
+  input     WE,
+  input     WCLK
+);
+
+  always @(posedge WCLK) begin
+    if(WE) GEN_OUT <= WDATA;
+  end
+
+endmodule
+
 module REG_5(
   input     clk,
   output    reg [4:0] GEN_OUT,
@@ -470,6 +488,10 @@ module SPI_WAVE(
 	// and for MOSI
 	reg [1:0] MOSIr;  always @(posedge clk) MOSIr <= {MOSIr[0], MOSI};
 	wire MOSI_data = MOSIr[1];
+	
+	// same thing for SSEL
+	reg [2:0] SSELr = 3'b111;  always @(posedge clk) SSELr <= {SSELr[1:0], SSEL};
+	wire      SSEL_active = ~SSELr[1];  // SSEL is active low
 
 	// we handle SPI in 16-bits format, so we need a 4 bits counter to count the bits as they come in
 	reg [3:0] bitcnt = 4'h0;
@@ -479,7 +501,7 @@ module SPI_WAVE(
 
 	always @(posedge clk)
 	begin
-	  if(SSEL || ~enable)
+	  if(~SSEL_active || ~enable)
 		bitcnt <= 4'b0000;
 		
 	  else if(SCK_risingedge) begin
@@ -490,7 +512,7 @@ module SPI_WAVE(
 	  end
 	end
 
-	always @(posedge clk) byte_received <= ~SSEL && SCK_risingedge && (bitcnt==4'b1111);
+	always @(posedge clk) byte_received <= SSEL_active && SCK_risingedge && (bitcnt==4'b1111);
 	always @(posedge clk) begin
 		if(byte_received) begin
 		  DATA_OUT <= byte_data_received;
@@ -521,9 +543,6 @@ wire      SSEL_active = ~SSELr[1];  // SSEL is active low
 
 // message starts at falling edge
 wire      SSEL_startmessage = (SSELr[2:1]==2'b10);
-
-// message stops at rising edge
-wire      SSEL_endmessage = (SSELr[2:1]==2'b01);
 
 // and for MOSI
 reg [1:0] MOSIr;  always @(posedge clk) MOSIr <= {MOSIr[0], MOSI};

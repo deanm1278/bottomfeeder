@@ -23,8 +23,7 @@ struct CC_LOG Synth::cc_log[MAX_CC];
 
 Synth::Synth() :
 QActive((QStateHandler)&Synth::InitialPseudoState),
-m_id(SYNTH), m_name("Synth"), adsr(), SDBuffer(sdbuf, SD_READ_MAX),
-m_waveformTimer(this, SYNTH_WAVEFORM_TIMER) {}
+m_id(SYNTH), m_name("Synth"), adsr(), SDBuffer(sdbuf, SD_READ_MAX) {}
 
 Synth::~Synth() {}
 
@@ -59,7 +58,6 @@ QState Synth::InitialPseudoState(Synth * const me, QEvt const * const e) {
 	
 	me->subscribe(SD_READ_FILE_RESPONSE);
 	me->subscribe(SD_WRITE_FILE_RESPONSE);
-	me->subscribe(FPGA_WRITE_WAVE_CFM);
 	
 	return Q_TRAN(&Synth::Root);
 }
@@ -144,14 +142,12 @@ QState Synth::Started(Synth * const me, QEvt const * const e) {
 		case Q_ENTRY_SIG: {
 			LOG_EVENT(e);
 			me->startTimer();
-			
 			status = Q_HANDLED();
 			break;
 		}
 		case Q_EXIT_SIG: {
 			LOG_EVENT(e);
 			me->stopTimer();
-			me->m_waveformTimer.disarm();
 			status = Q_HANDLED();
 			break;
 		}
@@ -396,7 +392,23 @@ QState Synth::Paraphonic(Synth * const me, QEvt const * const e) {
 				struct CC_ARG *arg = &me->cc_args[req.getCC()];
 				switch(arg->type){
 					case WT_TRANSPOSE:
-					default:
+						break;
+					case WT_WAVE:
+					case WT_VOLUME:{
+						(me->*me->cc[req.getCC()])(1, req.getValue(), &me->cc_args[req.getCC()]);
+						(me->*me->cc[req.getCC()])(2, req.getValue(), &me->cc_args[req.getCC()]);
+						(me->*me->cc[req.getCC()])(3, req.getValue(), &me->cc_args[req.getCC()]);
+						
+						//log this for saving presets
+						CC_LOG *c = &me->cc_log[req.getCC()];
+						c->cc = req.getCC();
+						c->values[0] = req.getValue();
+						c->values[1] = req.getValue();
+						c->values[2] = req.getValue();
+						
+						break;
+					}
+					default:{
 						(me->*me->cc[req.getCC()])(req.getChannel(), req.getValue(), &me->cc_args[req.getCC()]);
 						
 						//log this for saving presets
@@ -404,6 +416,7 @@ QState Synth::Paraphonic(Synth * const me, QEvt const * const e) {
 						c->cc = req.getCC();
 						c->values[req.getChannel() - 1] = req.getValue();
 						break;
+					}
 						
 				}
 			}
@@ -445,8 +458,6 @@ QState Synth::LoadingPreset(Synth * const me, QEvt const * const e) {
 		}
 		case Q_EXIT_SIG: {
 			LOG_EVENT(e);
-			//for now lets enable lfo
-			me->lfos[me->LFOWritingNum].activate();
 			//recall if we have deferred another write req
 			while(me->recall(&me->m_deferQueue));
 			
@@ -624,6 +635,7 @@ void Synth::flush(){
 			Evt *evt = new FlashConfigReadLFOReq(lfos[i].waveform_number, lfos[i].values);
 			QF::PUBLISH(evt, me);
 			lfos[i].UPDATE_BITS.wave = false;
+			lfos[i].activate();
 		}
 	}
 	
@@ -1139,7 +1151,8 @@ void Synth::cc_env(byte channel, byte value, struct CC_ARG *args){
 				adsr.setParam(param, value);
 				break;
 			default:
-				adsr.setParam(param, linToLog22[value]);
+				uint32_t val = linToLog22[value];
+				adsr.setParam(param, val);
 				break;
 		}
 	}

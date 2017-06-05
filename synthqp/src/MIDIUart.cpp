@@ -20,7 +20,7 @@
 /*! \brief Default constructor for MIDI_Class. */
 MIDI_Class::MIDI_Class() :
 QActive((QStateHandler)&MIDI_Class::InitialPseudoState),
-m_id(MIDI_UART), m_name("MIDI_UART"),m_timeout(this, MIDI_UART_TIMEOUT) {}
+m_id(MIDI_UART), m_name("MIDI_UART") {}
 	
 MIDI_Class::~MIDI_Class() {}
 
@@ -48,7 +48,6 @@ QState MIDI_Class::InitialPseudoState(MIDI_Class * const me, QEvt const * const 
 	me->subscribe(MIDI_UART_START_REQ);
 	me->subscribe(MIDI_UART_STOP_REQ);
 	me->subscribe(MIDI_UART_DATA_READY);
-	me->subscribe(MIDI_UART_TIMEOUT);
 	
 	return Q_TRAN(&MIDI_Class::Root);
 }
@@ -138,12 +137,6 @@ QState MIDI_Class::Started(MIDI_Class * const me, QEvt const * const e) {
 			status = Q_HANDLED();
 			break;
 		}
-		case MIDI_UART_TIMEOUT:{
-			me->reset_input_attributes();
-			
-			status = Q_HANDLED();
-			break;
-		}
 		case MIDI_UART_STOP_REQ: {
 			LOG_EVENT(e);
 			Evt const &req = EVT_CAST(*e);
@@ -154,8 +147,6 @@ QState MIDI_Class::Started(MIDI_Class * const me, QEvt const * const e) {
 		}
 		case MIDI_UART_DATA_READY: {
 			//LOG_EVENT(e);
-			
-			me->m_timeout.rearm(100);
 			me->read();
 			
 			status = Q_HANDLED();
@@ -190,7 +181,6 @@ bool MIDI_Class::read(const byte inChannel)
 	if (inChannel >= MIDI_CHANNEL_OFF) return false; // MIDI Input disabled.
 	
 	if (parse(inChannel)) {
-		m_timeout.disarm();
 		if (input_filter(inChannel)) {
 			
 			publish_midi_event();

@@ -123,12 +123,12 @@ style=wordwrap</panel_attributes>
   <element>
     <id>Text</id>
     <coordinates>
-      <x>1353</x>
-      <y>1177</y>
-      <w>363</w>
+      <x>1199</x>
+      <y>1166</y>
+      <w>473</w>
       <h>99</h>
     </coordinates>
-    <panel_attributes>SD_READ_FILE_RESPONSE
+    <panel_attributes>FLASH_CONFIG_READ_TO_LISTENER_DONE
 style=wordwrap</panel_attributes>
     <additional_attributes/>
   </element>
@@ -199,12 +199,13 @@ style=wordwrap</panel_attributes>
     </coordinates>
     <panel_attributes>WritingWave
 --
-entry/
-exit/ recall(&amp;m_deferQueue)
+entry/ write to the FPGAs write enable register,
+       ^FLASH_CONFIG_READ_TO_LISTENER_REQ
+       
+exit/ write to FPGA write enable reg (disable writing),
+       recall(&amp;m_deferQueue)
 
 FPGA_WRITE_WAVE_FILE/ defer(&amp;m_deferQueue)
-
-SD_READ_FILE_RESPONSE/ write data to fpga RAM
 
 valign=top
 </panel_attributes>
@@ -225,58 +226,24 @@ valign=top
     <id>Text</id>
     <coordinates>
       <x>176</x>
-      <y>1342</y>
+      <y>1375</y>
       <w>550</w>
       <h>99</h>
     </coordinates>
-    <panel_attributes>FPGA_WRITE_WAVE_FILE/
-^SD_READ_FILE_REQ(0, req.getFilename(), 0, SD_READ_MAX, &amp;SDBuffer)
+    <panel_attributes>FPGA_WRITE_WAVE_FILE
 style=wordwrap</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
-    <id>UMLSpecialState</id>
-    <coordinates>
-      <x>1309</x>
-      <y>1067</y>
-      <w>66</w>
-      <h>66</h>
-    </coordinates>
-    <panel_attributes>type=decision</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
     <id>Relation</id>
     <coordinates>
-      <x>1331</x>
-      <y>1122</y>
-      <w>33</w>
-      <h>176</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;140.0</additional_attributes>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>1331</x>
+      <x>1177</x>
       <y>891</y>
       <w>33</w>
-      <h>198</h>
+      <h>407</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;160.0</additional_attributes>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>1210</x>
-      <y>1089</y>
-      <w>121</w>
-      <h>209</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;170.0;10.0;10.0;90.0;10.0</additional_attributes>
+    <additional_attributes>10.0;10.0;10.0;350.0</additional_attributes>
   </element>
   <element>
     <id>Text</id>
@@ -300,31 +267,6 @@ style=wordwrap</panel_attributes>
       <h>33</h>
     </coordinates>
     <panel_attributes>[CDONE LOW]
-style=wordwrap</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>Text</id>
-    <coordinates>
-      <x>1364</x>
-      <y>1001</y>
-      <w>242</w>
-      <h>33</h>
-    </coordinates>
-    <panel_attributes>[req.getEof() == TRUE]
-style=wordwrap</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>Text</id>
-    <coordinates>
-      <x>979</x>
-      <y>1166</y>
-      <w>297</w>
-      <h>66</h>
-    </coordinates>
-    <panel_attributes>[req.getEof() == FALSE]/
-^SD_READ_FILE_REQ()
 style=wordwrap</panel_attributes>
     <additional_attributes/>
   </element>
