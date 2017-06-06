@@ -5,7 +5,7 @@ Features include:
   - Fine and coarse tuning controls for each oscillator
   - user loadable waveforms
   - 1 square wave sub oscillator for each oscillator
-- Full analog 4 pole resonanat low pass filter
+- Full analog 4 pole resonant low pass filter
 - ADSR envelope generator mappable to filter cutoff and VCA
 - Monophonic and 3 voice Paraphonic modes
 - Glide rate control
@@ -17,3 +17,5 @@ Features include:
 - Header connections for modification
 - Loading and saving presets
 - Low cost and small form factor
+
+Quick demo here: https://youtu.be/mSbowzdoYs0 (more to be added later)
