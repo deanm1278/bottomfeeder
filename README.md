@@ -1,5 +1,7 @@
 # bottomfeeder
 
+![Alt text](http://imgur.com/a/T4ETF)
+
 Features include:
 - 3x 16 bit digital Wavetable Oscillators (sample rates up to 200k samples/sec)
   - Fine and coarse tuning controls for each oscillator
@@ -18,4 +20,4 @@ Features include:
 - Loading and saving presets
 - Low cost and small form factor
 
-Quick demo here: https://youtu.be/mSbowzdoYs0 (more to be added later)
+Some demos here https://www.youtube.com/watch?v=mSbowzdoYs0&list=PL59ZxwFBLROTydRgtpQ5mKHmTjY1HfpDJ (more to be added later)
