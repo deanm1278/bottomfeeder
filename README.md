@@ -1,6 +1,6 @@
 # bottomfeeder
 
-![Alt text](http://imgur.com/oyFAfsK)
+![Alt text](synth.jpg)
 
 Features include:
 - 3x 16 bit digital Wavetable Oscillators (sample rates up to 200k samples/sec)
