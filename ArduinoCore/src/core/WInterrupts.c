@@ -138,7 +138,7 @@ void detachInterrupt(uint32_t pin)
  * External Interrupt Controller NVIC Interrupt Handler
  */
 
-/*
+
 void EIC_Handler(void)
 {
   // Test the 16 normal interrupts
@@ -156,5 +156,4 @@ void EIC_Handler(void)
     }
   }
 }
-*/
 

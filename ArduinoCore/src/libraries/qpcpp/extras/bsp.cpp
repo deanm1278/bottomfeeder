@@ -187,14 +187,11 @@ void QF::onStartup(void) {
 	
     // assigning all priority bits for preemption-prio. and none to sub-prio.
     //NVIC_SetPriorityGrouping(0U);
-	NVIC_DisableIRQ(EIC_IRQn);
-	NVIC_ClearPendingIRQ(EIC_IRQn);
 	
 	NVIC_SetPriority(PendSV_IRQn, 0xFF);
 	SysTick_Config(SystemCoreClock / BSP_TICKS_PER_SEC);
 	NVIC_SetPriority(SysTick_IRQn, SYSTICK_PRIO);
 	NVIC_SetPriority(SERCOM5_IRQn, MIDI_UART_PRIO);
-	NVIC_SetPriority(EIC_IRQn, EIC_PRIO);
 	NVIC_SetPriority(TC3_IRQn, UPDATE_TMR_PRIO);
 	NVIC_SetPriority(TC4_IRQn, LFO_TIMER_PRIO);
 	NVIC_SetPriority(TC5_IRQn, LFO_TIMER2_PRIO);
@@ -210,7 +207,6 @@ void QF::onStartup(void) {
 
     // enable IRQs...
     //NVIC_EnableIRQ(EXTI0_1_IRQn);
-	NVIC_EnableIRQ(EIC_IRQn);
 	NVIC_EnableIRQ(TC3_IRQn);
 	NVIC_EnableIRQ(TC4_IRQn);
 	NVIC_EnableIRQ(TC5_IRQn);

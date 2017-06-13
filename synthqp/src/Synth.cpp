@@ -7,6 +7,7 @@
 #include "noteDefs.h"
 #include "waveDefs.h"
 #include "envDefs.h"
+#include "cvExpDefs.h"
 
 #include "bsp.h"
 
@@ -16,7 +17,7 @@ Q_DEFINE_THIS_FILE
 static byte sdbuf[SD_READ_MAX];
 
 wavetable Synth::waves[] = {wavetable(), wavetable(), wavetable()};
-cv Synth::cvs[] = {cv(600, 4095), cv(), cv(), cv(), cv()};
+cv Synth::cvs[] = {cv(600, 4095), cv(linToLog12), cv(), cv(), cv()};
 LFO Synth::lfos[] = {LFO(TC4), LFO(TC5)};
 struct note *Synth::notebuf[] = {NULL, NULL, NULL, NULL, NULL, NULL};
 struct CC_LOG Synth::cc_log[MAX_CC];
@@ -687,7 +688,8 @@ void Synth::flush(){
 		}
 		//write any necessary updates
 		if(c->UPDATE){
-			evt = new FPGAWritePWM(i, constrain(c->BASE + c->NET, c->low, c->high));
+			uint16_t value = c->getCurrentValue();
+			evt = new FPGAWritePWM(i, value);
 			QF::PUBLISH(evt, this);
 			
 			c->UPDATE = false;

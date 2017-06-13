@@ -10,7 +10,6 @@
 
 #include "System.h"
 #include "MIDIUART.h"
-#include "CapTouch.h"
 #include "FlashConfig.h"
 #include "SDCard.h"
 #include "FPGA.h"
@@ -39,7 +38,6 @@ static FlashConfig flash;
 static SDCard sd;
 static FPGA fpga;
 static MIDIUSB midiusb;
-static CapTouch captouch;
 static Synth synth;
 
 void setup() {
@@ -68,7 +66,6 @@ void setup() {
   //Start active objects.
   sys.Start(PRIO_SYSTEM);
   midi.Start(PRIO_MIDI_UART);
-  captouch.Start(PRIO_CAP_TOUCH);
   flash.Start(PRIO_FLASH_CONFIG);
   sd.Start(PRIO_SD_CARD);
   fpga.Start(PRIO_FPGA);
@@ -127,20 +124,6 @@ extern "C" void SERCOM5_Handler(){
 	QXK_ISR_ENTRY();
 	Serial.IrqHandler();
 	MIDI_Class::RxCallback(MIDI_UART);
-	QXK_ISR_EXIT();
-}
-
-//TODO: MAKE SURE YOU PUT THIS BACK IN WInterrupts.c
-extern "C" void EIC_Handler(void)
-{
-	QXK_ISR_ENTRY();
-	//disable interrupt
-	EExt_Interrupts in = g_APinDescription[INT_PIN].ulExtInt;
-	EIC->INTENCLR.reg = EIC_INTENCLR_EXTINT(1 << in);
-	
-	CapTouch::touchCallback();
-	// Clear the interrupt
-	EIC->INTFLAG.reg = 1 << EXTERNAL_INT_6;
 	QXK_ISR_EXIT();
 }
 

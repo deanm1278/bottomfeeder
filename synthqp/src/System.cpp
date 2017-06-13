@@ -70,9 +70,6 @@ QState System::InitialPseudoState(System * const me, QEvt const * const e) {
 	me->subscribe(FPGA_START_CFM);
 	me->subscribe(FPGA_STOP_CFM);
 	
-	me->subscribe(CAP_TOUCH_START_CFM);
-	me->subscribe(CAP_TOUCH_STOP_CFM);
-	
 	me->subscribe(SYNTH_START_CFM);
 	me->subscribe(SYNTH_STOP_CFM);
 	
@@ -176,10 +173,6 @@ QState System::Stopping(System * const me, QEvt const * const e) {
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
 			
-			evt = new CapTouchStopReq(me->m_nextSequence++);
-			// TODO - Save sequence number for comparison.
-			QF::PUBLISH(evt, me);
-			
 			evt = new SynthStopReq(me->m_nextSequence++);
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
@@ -197,10 +190,9 @@ QState System::Stopping(System * const me, QEvt const * const e) {
 		case SD_STOP_CFM:
 		case MIDI_USB_STOP_CFM:
 		case SYNTH_STOP_CFM:
-		case CAP_TOUCH_STOP_CFM:
 		case MIDI_UART_STOP_CFM: {
 			LOG_EVENT(e);
-			me->HandleCfm(ERROR_EVT_CAST(*e), 7);
+			me->HandleCfm(ERROR_EVT_CAST(*e), 6);
 			status = Q_HANDLED();
 			break;
 		}
@@ -257,10 +249,6 @@ QState System::Starting(System * const me, QEvt const * const e) {
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
 			
-			evt = new CapTouchStartReq(me->m_nextSequence++);
-			// TODO - Save sequence number for comparison.
-			QF::PUBLISH(evt, me);
-			
 			evt = new SynthStartReq(me->m_nextSequence++);
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
@@ -279,10 +267,9 @@ QState System::Starting(System * const me, QEvt const * const e) {
 		case SD_START_CFM:
 		case MIDI_USB_START_CFM:
 		case SYNTH_START_CFM:
-		case CAP_TOUCH_START_CFM:
 		case MIDI_UART_START_CFM: {
 			LOG_EVENT(e);
-			me->HandleCfm(ERROR_EVT_CAST(*e), 7);
+			me->HandleCfm(ERROR_EVT_CAST(*e), 6);
 			status = Q_HANDLED();
 			break;
 		}
@@ -493,10 +480,6 @@ QState System::WriteWaveforms(System * const me, QEvt const * const e) {
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
 			
-			evt = new CapTouchStopReq(me->m_nextSequence++);
-			// TODO - Save sequence number for comparison.
-			QF::PUBLISH(evt, me);
-			
 			evt = new SynthStopReq(me->m_nextSequence++);
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
@@ -516,10 +499,9 @@ QState System::WriteWaveforms(System * const me, QEvt const * const e) {
 		case MIDI_USB_STOP_CFM:
 		case SYNTH_STOP_CFM:
 		case FPGA_STOP_CFM:
-		case CAP_TOUCH_STOP_CFM:
 		case MIDI_UART_STOP_CFM: {
 			LOG_EVENT(e);
-			me->HandleCfm(ERROR_EVT_CAST(*e), 5);
+			me->HandleCfm(ERROR_EVT_CAST(*e), 4);
 			status = Q_HANDLED();
 			break;
 		}
@@ -559,10 +541,6 @@ QState System::WriteFirmware(System * const me, QEvt const * const e) {
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
 			
-			evt = new CapTouchStopReq(me->m_nextSequence++);
-			// TODO - Save sequence number for comparison.
-			QF::PUBLISH(evt, me);
-			
 			evt = new SynthStopReq(me->m_nextSequence++);
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
@@ -582,10 +560,9 @@ QState System::WriteFirmware(System * const me, QEvt const * const e) {
 		case MIDI_USB_STOP_CFM:
 		case SYNTH_STOP_CFM:
 		case FPGA_STOP_CFM:
-		case CAP_TOUCH_STOP_CFM:
 		case MIDI_UART_STOP_CFM: {
 			LOG_EVENT(e);
-			me->HandleCfm(ERROR_EVT_CAST(*e), 5);
+			me->HandleCfm(ERROR_EVT_CAST(*e), 4);
 			status = Q_HANDLED();
 			break;
 		}

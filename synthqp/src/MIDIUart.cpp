@@ -77,6 +77,11 @@ QState MIDI_Class::Root(MIDI_Class * const me, QEvt const * const e) {
 			status = Q_HANDLED();
 			break;
 		}
+		case MIDI_UART_DATA_READY:{
+			//ignore
+			status = Q_HANDLED();
+			break;
+		}
 		default: {
 			status = Q_SUPER(&QHsm::top);
 			break;

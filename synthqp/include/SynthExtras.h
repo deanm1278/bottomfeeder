@@ -150,6 +150,7 @@ private:
 class cv : public LFO_TARGET {
 	public:
 	cv() : LFO_TARGET() {};
+	cv(const uint16_t *values) : LFO_TARGET(), values(values) {};
 	cv(uint16_t low, uint16_t high) : LFO_TARGET(), low(low), high(high) {};
 	~cv() {};
 	
@@ -159,10 +160,19 @@ class cv : public LFO_TARGET {
 	
 	uint16_t low = 0;
 	uint16_t high = 4095;
+	const uint16_t *values = NULL;
 	
 	void setBase(uint8_t base){
 		BASE = map(base, 0, 127, low, high);
 		UPDATE = true;
+	}
+	
+	uint16_t getCurrentValue(){
+		if(this->values != NULL){
+			uint8_t ix = constrain(map(this->BASE + this->NET, 0, 4095, 0, 127), 0, 127);
+			return this->values[ix];
+		}
+		else return constrain(this->BASE + this->NET, this->low, this->high);
 	}
 };
 

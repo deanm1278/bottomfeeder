@@ -94,12 +94,7 @@ enum {
 	FPGA_SET_ENABLE_REQ,
 	FPGA_WRITE_VOL_REQ,
 	FPGA_SET_WRITE_ENABLE_REQ,
-	
-	CAP_TOUCH_START_REQ,
-	CAP_TOUCH_START_CFM,
-	CAP_TOUCH_STOP_REQ,
-	CAP_TOUCH_STOP_CFM,
-	CAP_TOUCH_TOUCHED,
+	FPGA_START_TIMER,
 	
 	SYNTH_START_REQ,
 	SYNTH_START_CFM,
@@ -233,40 +228,6 @@ public:
     UserLedToggleReq(uint16_t seq) :
         Evt(USER_LED_TOGGLE_REQ, seq) {}
 };
-
-/************ CAP TOUCH *****************/
-
-class CapTouchStartReq : public Evt {
-	public:
-	enum {
-		TIMEOUT_MS = 100
-	};
-	CapTouchStartReq(uint16_t seq) :
-	Evt(CAP_TOUCH_START_REQ, seq) {}
-};
-
-class CapTouchStartCfm : public ErrorEvt {
-	public:
-	CapTouchStartCfm(uint16_t seq, Error error, Reason reason = 0) :
-	ErrorEvt(CAP_TOUCH_START_CFM, seq, error, reason) {}
-};
-
-class CapTouchStopReq : public Evt {
-	public:
-	enum {
-		TIMEOUT_MS = 100
-	};
-	CapTouchStopReq(uint16_t seq) :
-	Evt(CAP_TOUCH_STOP_REQ, seq) {}
-};
-
-class CapTouchStopCfm : public ErrorEvt {
-	public:
-	CapTouchStopCfm(uint16_t seq, Error error, Reason reason = 0) :
-	ErrorEvt(CAP_TOUCH_STOP_CFM, seq, error, reason) {}
-};
-
-/*********** END CAP TOUCH **************/
 
 /************ SYNTH *****************/
 

@@ -103,6 +103,8 @@ private:
 	//for writing waves
 	uint8_t writeChannel;
 	uint8_t writeNum;
+	
+	QTimeEvt m_startTimer;
 };
 
 #endif

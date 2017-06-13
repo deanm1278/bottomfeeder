@@ -10,7 +10,8 @@ Q_DEFINE_THIS_FILE
 
 FPGA::FPGA() :
 QActive((QStateHandler)&FPGA::InitialPseudoState),
-m_id(FPGA_ID), m_name("FPGA"), settings(4000000, MSBFIRST, SPI_MODE0) {}
+m_id(FPGA_ID), m_name("FPGA"), settings(4000000, MSBFIRST, SPI_MODE0),
+m_startTimer(this, FPGA_START_TIMER) {}
 
 FPGA::~FPGA() {}
 
@@ -40,6 +41,7 @@ QState FPGA::InitialPseudoState(FPGA * const me, QEvt const * const e) {
 	me->subscribe(FPGA_SET_PORTAMENTO_REQ);
 	me->subscribe(FPGA_SET_ENABLE_REQ);
 	me->subscribe(FPGA_WRITE_VOL_REQ);
+	me->subscribe(FPGA_START_TIMER);
 	
 	me->subscribe(FLASH_CONFIG_READ_TO_LISTENER_DONE);
 	
@@ -90,6 +92,7 @@ QState FPGA::Stopped(FPGA * const me, QEvt const * const e) {
 		}
 		case Q_EXIT_SIG: {
 			LOG_EVENT(e);
+			me->m_startTimer.disarm();
 			status = Q_HANDLED();
 			break;
 		}
@@ -101,12 +104,8 @@ QState FPGA::Stopped(FPGA * const me, QEvt const * const e) {
 			status = Q_HANDLED();
 			break;
 		}
-		case FPGA_START_REQ: {
+		case FPGA_START_TIMER: {
 			LOG_EVENT(e);
-			
-			digitalWrite(CRESET_B, HIGH);
-			
-			delay(1000);
 			
 			if(digitalRead(CDONE)){
 				SPI.begin();
@@ -120,6 +119,17 @@ QState FPGA::Stopped(FPGA * const me, QEvt const * const e) {
 				//TODO: fail here
 				__BKPT();
 			}
+			break;
+		}
+		case FPGA_START_REQ: {
+			LOG_EVENT(e);
+			
+			digitalWrite(CRESET_B, HIGH);
+			
+			me->m_startTimer.armX(1000);
+			
+			status = Q_HANDLED();
+			
 			break;
 		}
 		default: {
