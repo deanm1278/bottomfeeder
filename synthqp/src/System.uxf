@@ -352,17 +352,6 @@ valign=top
     <additional_attributes/>
   </element>
   <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>99</x>
-      <y>946</y>
-      <w>33</w>
-      <h>429</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;370.0;10.0;10.0</additional_attributes>
-  </element>
-  <element>
     <id>Text</id>
     <coordinates>
       <x>132</x>
@@ -396,5 +385,16 @@ style=wordwrap</panel_attributes>
     <panel_attributes>FLASH_CONFIG_WRITE_DONE
 style=wordwrap</panel_attributes>
     <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>99</x>
+      <y>946</y>
+      <w>33</w>
+      <h>429</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;370.0;10.0;10.0</additional_attributes>
   </element>
 </diagram>

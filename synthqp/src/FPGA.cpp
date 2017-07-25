@@ -147,7 +147,7 @@ QState FPGA::Started(FPGA * const me, QEvt const * const e) {
 			LOG_EVENT(e);
 			
 			//make sure the filter starts up
-			me->writeReg(FPGA_PWM0, 4095);
+			me->writeReg(FPGA_PWM0, 2048);
 			me->writeReg(FPGA_ENABLE, 0);
 			me->writeReg(FPGA_W0_FREQ, 0);
 			me->writeReg(FPGA_W1_FREQ, 0);
