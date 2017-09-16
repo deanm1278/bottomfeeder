@@ -14,8 +14,7 @@ Features include:
 - 2x LFO (also any user loadable waveform)
   - Mappable to many parameters including rate or depth of the other LFO
 - External input to filter
-- Noise Generator
-- All parameters controllable via Standard MIDI or class-compliant MIDI USB
+- All parameters controllable via Standard MIDI
 - Header connections for modification
 - Loading and saving presets
 - Low cost and small form factor
