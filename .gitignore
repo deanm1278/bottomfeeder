@@ -1,0 +1,7 @@
+*.xml
+*.log
+synthqp/Debug/
+*.csv
+*.b#*
+*.s#*
+*.cpproj
