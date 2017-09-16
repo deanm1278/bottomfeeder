@@ -1,6 +1,8 @@
 #ifndef LIB_SYNTH_DEFS_H
 #define LIB_SYNTH_DEFS_H
 
+#define PANEL_ATTACHED
+
 #define CC_ARGS_MAX_LENGTH 8
 #define LFO_NUM_VALUES 256
 #define LFO_MAX_FREQ 20
@@ -12,13 +14,6 @@
 
 #define WAVES_PATH "waves/"
 #define PRESETS_PATH "presets/"
-
-#define PRESET_LOAD_SELECT_CC 124
-#define PRESET_LOAD_ENTER_CC 125
-#define PRESET_STORE_SELECT_CC 126
-#define PRESET_STORE_ENTER_CC 127
-
-#define PARA_MODE_CC 25
 
 enum {
 	SUB0 = 0x01,
@@ -68,11 +63,37 @@ typedef enum ccType_t{
 	GLIDE_TIME = 0x0A,
 	ENV = 0x0B,
 	LFO_WAVE = 0x0C,
-	CC_LFO_TARGET = 0x0D,
+	CC_TYPE_LFO_TARGET = 0x0D,
 	PRESET_LOAD_SELECT,
 	PRESET_LOAD_ENTER,
 	PRESET_STORE_SELECT,
 	PRESET_STORE_ENTER
 };
+
+#define CC_WT_WAVE 26
+#define CC_WT_TRANSPOSE 6
+#define CC_WT_TUNE 2
+#define CC_WT_VOLUME 27
+#define CC_GLIDE_TIME 9
+#define CC_CUTOFF 74
+#define CC_RESONANCE 71
+#define CC_ATTACK 73
+#define CC_DECAY 15
+#define CC_SUSTAIN 16
+#define CC_RELEASE 72
+#define CC_ENV_CUTOFF_MIX 10
+#define CC_ENV_AMP_MIX 11
+#define CC_AMP 7
+#define CC_SUB 13
+#define CC_NOISE 20
+#define CC_LFO_TARGET 21
+#define CC_LFO_RATE 22
+#define CC_LFO_DEPTH 23
+#define CC_LFO_WAVE 29
+#define CC_PRESET_LOAD_SELECT 124
+#define CC_PRESET_LOAD_ENTER 125
+#define CC_PRESET_STORE_SELECT 126
+#define CC_PRESET_STORE_ENTER 127
+#define CC_PARA_MODE 25
 
 #endif

@@ -533,7 +533,8 @@ void FlashConfig::prog(uint32_t addr, uint8_t *data, int n)
 	}
 	#endif
 	
-	QF_CRIT_ENTRY();
+	QF_CRIT_STAT_TYPE crit;
+	QF_CRIT_ENTRY(crit);
 	uint8_t command[4] = { 0x02, (uint8_t)(addr >> 16), (uint8_t)(addr >> 8), (uint8_t)addr };
 	SPI.beginTransaction(settings);
 	digitalWrite(SPI_SS_B, LOW);
@@ -541,7 +542,7 @@ void FlashConfig::prog(uint32_t addr, uint8_t *data, int n)
 	SPI.transfer(data, n);
 	digitalWrite(SPI_SS_B, HIGH);
 	SPI.endTransaction();
-	QF_CRIT_EXIT();
+	QF_CRIT_EXIT(crit);
 }
 
 void FlashConfig::read(uint32_t addr, uint8_t *data, int n)
@@ -554,7 +555,8 @@ void FlashConfig::read(uint32_t addr, uint8_t *data, int n)
 	SerialUSB.println("..");
 	#endif
 
-	QF_CRIT_ENTRY();
+	QF_CRIT_STAT_TYPE crit;
+	QF_CRIT_ENTRY(crit);
 	
 	uint8_t command[4] = { 0x03, (uint8_t)(addr >> 16), (uint8_t)(addr >> 8), (uint8_t)addr };
 	SPI.beginTransaction(settings);
@@ -565,7 +567,7 @@ void FlashConfig::read(uint32_t addr, uint8_t *data, int n)
 	digitalWrite(SPI_SS_B, HIGH);
 	SPI.endTransaction();
 	
-	QF_CRIT_EXIT();
+	QF_CRIT_EXIT(crit);
 
 	#ifdef BFX_DEBUG
 	for (int i = 0; i < n; i++){
@@ -578,7 +580,8 @@ void FlashConfig::read(uint32_t addr, uint8_t *data, int n)
 
 void FlashConfig::readToListener(uint32_t addr, uint16_t n)
 {
-		QF_CRIT_ENTRY();
+		QF_CRIT_STAT_TYPE crit;
+		QF_CRIT_ENTRY(crit);
 		uint8_t command[4] = { 0x0B, (uint8_t)(addr >> 16), (uint8_t)(addr >> 8), (uint8_t)addr };
 		SPI.beginTransaction(settings);
 		digitalWrite(SPI_SS_B, LOW);
@@ -594,7 +597,7 @@ void FlashConfig::readToListener(uint32_t addr, uint16_t n)
 		digitalWrite(SPI_SS_B, HIGH);
 		SPI.endTransaction();
 		
-		QF_CRIT_EXIT();
+		QF_CRIT_EXIT(crit);
 }
 
 void FlashConfig::wait()
@@ -607,13 +610,14 @@ void FlashConfig::wait()
 	{
 		uint8_t data[2] = { 0x05 };
 			
-		QF_CRIT_ENTRY();
+		QF_CRIT_STAT_TYPE crit;
+		QF_CRIT_ENTRY(crit);
 		SPI.beginTransaction(settings);
 		digitalWrite(SPI_SS_B, LOW);
 		SPI.transfer(data, 2);
 		digitalWrite(SPI_SS_B, HIGH);
 		SPI.endTransaction();
-		QF_CRIT_EXIT();
+		QF_CRIT_EXIT(crit);
 
 		if ((data[1] & 0x01) == 0)
 		break;

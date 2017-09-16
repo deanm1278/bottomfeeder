@@ -1,133 +1,131 @@
 #include "waveDefs.h"
-#include "Arduino.h"
-
 const char *waveforms[] = {
-  NULL,
-"basic_saw.w",//1
-"basic_sin.w",//2
-"basic_squ.w",//3
-"basic_tri.w",//4
-"bsaw_0001.w",//5
-"bsaw_0002.w",//6
-"bsaw_0003.w",//7
-"bsaw_0004.w",//8
-"bsaw_0005.w",//9
-"bsaw_0006.w",//10
-"distorted_0008.w",//11
-"distorted_0009.w",//12
-"distorted_0010.w",//13
-"distorted_0011.w",//14
-"distorted_0012.w",//15
-"distorted_0013.w",//16
-"distorted_0014.w",//17
-"distorted_0015.w",//18
-"distorted_0016.w",//19
-"distorted_0017.w",//20
-"distorted_0018.w",//21
-"distorted_0019.w",//22
-"distorted_0020.w",//23
-"distorted_0021.w",//24
-"distorted_0022.w",//25
-"epiano_0009.w",//26
-"epiano_0037.w",//27
-"epiano_0046.w",//28
-"epiano_0056.w",//29
-"epiano_0065.w",//30
-"epiano_0071.w",//31
-"gapsaw_0021.w",//32
-"gapsaw_0022.w",//33
-"gapsaw_0023.w",//34
-"gapsaw_0024.w",//35
-"gapsaw_0025.w",//36
-"gapsaw_0026.w",//37
-"gapsaw_0027.w",//38
-"gapsaw_0028.w",//39
-"rAsymSqu_21.w",//40
-"rAsymSqu_22.w",//41
-"rAsymSqu_23.w",//42
-"rAsymSqu_24.w",//43
-"rAsymSqu_25.w",//44
-"rAsymSqu_26.w",//45
-"rSymSqu_01.w",//46
-"rSymSqu_02.w",//47
-"rSymSqu_03.w",//48
-"rSymSqu_04.w",//49
-"rSymSqu_05.w",//50
-"rSymSqu_06.w",//51
-"rSymSqu_07.w",//52
-"rSymSqu_08.w",//53
-"rSymSqu_09.w",//54
-"rSymSqu_10.w",//55
-"R_asym_saw_19.w",//56
-"R_asym_saw_20.w",//57
-"R_asym_saw_21.w",//58
-"R_asym_saw_22.w",//59
-"R_asym_saw_23.w",//60
-"R_asym_saw_24.w",//61
-"R_asym_saw_25.w",//62
-"R_asym_saw_26.w",//63
-"R_sym_saw_01.w",//64
-"R_sym_saw_02.w",//65
-"R_sym_saw_03.w",//66
-"R_sym_saw_04.w",//67
-"R_sym_saw_05.w",//68
-"R_sym_saw_06.w",//69
-"R_sym_saw_07.w",//70
-"R_sym_saw_08.w",//71
-"R_sym_saw_09.w",//72
-"R_sym_saw_10.w",//73
-"saw_0001.w",//74
-"saw_0002.w",//75
-"saw_0003.w",//76
-"saw_0004.w",//77
-"saw_0005.w",//78
-"saw_0006.w",//79
-"saw_0007.w",//80
-"saw_0008.w",//81
-"saw_0009.w",//82
-"sinharm01.w",//83
-"sin_0001.w",//84
-"sin_0002.w",//85
-"sin_0003.w",//86
-"sin_0004.w",//87
-"sin_0005.w",//88
-"sin_0006.w",//89
-"sin_0007.w",//90
-"sin_0008.w",//91
-"sin_0009.w",//92
-"sin_0010.w",//93
-"sin_0011.w",//94
-"sin_0012.w",//95
-"squ_0011.w",//96
-"squ_0012.w",//97
-"squ_0013.w",//98
-"squ_0014.w",//99
-"squ_0015.w",//100
-"squ_0016.w",//101
-"squ_0017.w",//102
-"squ_0018.w",//103
-"squ_0019.w",//104
-"squ_0020.w",//105
-"squ_0021.w",//106
-"squ_0022.w",//107
-"squ_0023.w",//108
-"squ_0024.w",//109
-"squ_0025.w",//110
-"squ_0026.w",//111
-"squ_0027.w",//112
-"squ_0028.w",//113
-"squ_0029.w",//114
-"squ_0030.w",//115
-"squ_0031.w",//116
-"squ_0032.w",//117
-"squ_0033.w",//118
-"theremin1.w",//119
-"tri_0007.w",//120
-"tri_0008.w",//121
-"tri_0009.w",//122
-"tri_0010.w",//123
-"tri_0011.w",//124
-"tri_0012.w",//125
-"tri_0013.w",//126
- NULL
+ "wav00.w",
+ "wav01.w",
+ "wav02.w",
+ "wav03.w",
+ "wav04.w",
+ "wav05.w",
+ "wav06.w",
+ "wav07.w",
+ "wav08.w",
+ "wav09.w",
+ "wav10.w",
+ "wav11.w",
+ "wav12.w",
+ "wav13.w",
+ "wav14.w",
+ "wav15.w",
+ "wav16.w",
+ "wav17.w",
+ "wav18.w",
+ "wav19.w",
+ "wav20.w",
+ "wav21.w",
+ "wav22.w",
+ "wav23.w",
+ "wav24.w",
+ "wav25.w",
+ "wav26.w",
+ "wav27.w",
+ "wav28.w",
+ "wav29.w",
+ "wav30.w",
+ "wav31.w",
+ "wav32.w",
+ "wav33.w",
+ "wav34.w",
+ "wav35.w",
+ "wav36.w",
+ "wav37.w",
+ "wav38.w",
+ "wav39.w",
+ "wav40.w",
+ "wav41.w",
+ "wav42.w",
+ "wav43.w",
+ "wav44.w",
+ "wav45.w",
+ "wav46.w",
+ "wav47.w",
+ "wav48.w",
+ "wav49.w",
+ "wav50.w",
+ "wav51.w",
+ "wav52.w",
+ "wav53.w",
+ "wav54.w",
+ "wav55.w",
+ "wav56.w",
+ "wav57.w",
+ "wav58.w",
+ "wav59.w",
+ "wav60.w",
+ "wav61.w",
+ "wav62.w",
+ "wav63.w",
+ "wav64.w",
+ "wav65.w",
+ "wav66.w",
+ "wav67.w",
+ "wav68.w",
+ "wav69.w",
+ "wav70.w",
+ "wav71.w",
+ "wav72.w",
+ "wav73.w",
+ "wav74.w",
+ "wav75.w",
+ "wav76.w",
+ "wav77.w",
+ "wav78.w",
+ "wav79.w",
+ "wav80.w",
+ "wav81.w",
+ "wav82.w",
+ "wav83.w",
+ "wav84.w",
+ "wav85.w",
+ "wav86.w",
+ "wav87.w",
+ "wav88.w",
+ "wav89.w",
+ "wav90.w",
+ "wav91.w",
+ "wav92.w",
+ "wav93.w",
+ "wav94.w",
+ "wav95.w",
+ "wav96.w",
+ "wav97.w",
+ "wav98.w",
+ "wav99.w",
+ "wav100.w",
+ "wav101.w",
+ "wav102.w",
+ "wav103.w",
+ "wav104.w",
+ "wav105.w",
+ "wav106.w",
+ "wav107.w",
+ "wav108.w",
+ "wav109.w",
+ "wav110.w",
+ "wav111.w",
+ "wav112.w",
+ "wav113.w",
+ "wav114.w",
+ "wav115.w",
+ "wav116.w",
+ "wav117.w",
+ "wav118.w",
+ "wav119.w",
+ "wav120.w",
+ "wav121.w",
+ "wav122.w",
+ "wav123.w",
+ "wav124.w",
+ "wav125.w",
+ "wav126.w",
+ "wav127.w"
 };

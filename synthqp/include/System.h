@@ -34,6 +34,8 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+#define NUM_AO 5
+
 #include "Arduino.h"
 #include "qpcpp.h"
 #include "qp_extras.h"

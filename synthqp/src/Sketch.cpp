@@ -13,8 +13,12 @@
 #include "FlashConfig.h"
 #include "SDCard.h"
 #include "FPGA.h"
-#include "MIDIUSB.h"
 #include "Synth.h"
+#include "Panel.h"
+
+#ifdef CONFIG_MIDI_USB
+	#include "MIDIUSB.h"
+#endif
 
 #include "event.h"
 #include "bsp.h"
@@ -23,7 +27,7 @@ enum {
     EVT_SIZE_SMALL = 32,
     EVT_SIZE_MEDIUM = 64,
     EVT_SIZE_LARGE = 256,
-    EVT_COUNT_SMALL = 256,
+    EVT_COUNT_SMALL = 128,
     EVT_COUNT_MEDIUM = 16,
     EVT_COUNT_LARGE = 4
 };
@@ -37,19 +41,15 @@ static MIDI_Class midi;
 static FlashConfig flash;
 static SDCard sd;
 static FPGA fpga;
+
+#ifdef CONFIG_MIDI_USB
 static MIDIUSB midiusb;
+#endif
+
 static Synth synth;
+static Panel panel;
 
 void setup() {
-	/*
-  //TODO: REMOVE
-  pinMode(A3, OUTPUT);
-  pinMode(A0, OUTPUT);
-  pinMode(12, OUTPUT);
-  digitalWrite(A0, HIGH);
-  digitalWrite(12, HIGH);
-  digitalWrite(A3, LOW); 
-  */
   
   //for LED
   pinMode(13, OUTPUT);
@@ -69,8 +69,13 @@ void setup() {
   flash.Start(PRIO_FLASH_CONFIG);
   sd.Start(PRIO_SD_CARD);
   fpga.Start(PRIO_FPGA);
+#ifdef CONFIG_MIDI_USB
   midiusb.Start(PRIO_MIDI_USB);
+#endif
   synth.Start(PRIO_SYNTH);
+#ifdef PANEL_ATTACHED
+  panel.Start(PRIO_PANEL);
+#endif
   
   //publish a start request
   Evt *evt = new SystemStartReq(0);
@@ -84,6 +89,7 @@ extern "C" void TC3_Handler() {
 	TcCount16* TC = (TcCount16*) TC3;
 	
 	Synth::timerCallback();
+	Panel::timerCallback();
 	
 	// If this interrupt is due to the compare register matching the timer count
 	if (TC->INTFLAG.bit.MC0 == 1) {

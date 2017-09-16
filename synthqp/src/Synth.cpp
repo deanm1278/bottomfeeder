@@ -154,7 +154,7 @@ QState Synth::Started(Synth * const me, QEvt const * const e) {
 		}
 		case Q_INIT_SIG:{
 			LOG_EVENT(e);
-			if(me->cc_log[PARA_MODE_CC].values[0] > 63) status = Q_TRAN(&Synth::Paraphonic);
+			if(me->cc_log[CC_PARA_MODE].values[0] > 63) status = Q_TRAN(&Synth::Paraphonic);
 			else status = Q_TRAN(&Synth::Monophonic);
 			break;
 		}
@@ -217,6 +217,7 @@ QState Synth::Started(Synth * const me, QEvt const * const e) {
 					wavetable *w = &me->waves[0];
 					//scale to 512 values (-256 to 256)
 					lfo->mapMax = 255;
+					lfo->maxFreq = 20.0;
 					
 					lfo->target = w;
 					//pitch modulators actually target all waves
@@ -229,6 +230,7 @@ QState Synth::Started(Synth * const me, QEvt const * const e) {
 					cv * c = &me->cvs[req.getId()];
 					//scale to 2048 values
 					lfo->mapMax = 1023;
+					lfo->maxFreq = 20.0;
 					
 					lfo->target = c;
 					c->lfos[req.getNum()] = lfo;
@@ -238,6 +240,7 @@ QState Synth::Started(Synth * const me, QEvt const * const e) {
 					LFO *l = &me->lfos[req.getId()];
 					//scale to 64 values
 					lfo->mapMax = 63;
+					lfo->maxFreq = 2.0;
 					
 					lfo->target = l;
 					l->lfos[req.getNum()] = lfo;
@@ -247,6 +250,7 @@ QState Synth::Started(Synth * const me, QEvt const * const e) {
 					LFO *l = &me->lfos[req.getId()];
 					//scale to (LFO_MAX_FREQ * LFO_NUM values) values
 					lfo->mapMax = (LFO_MAX_FREQ * LFO_NUM_VALUES) >> 1;
+					lfo->maxFreq = 2.0;
 					
 					lfo->target = l;
 					l->lfos[req.getNum()] = lfo;
@@ -257,6 +261,8 @@ QState Synth::Started(Synth * const me, QEvt const * const e) {
 					Q_ASSERT(0);
 					break;
 			}
+			lfo->UPDATE_BITS.depth = true;
+			lfo->UPDATE_BITS.rate = true;
 			
 			status = Q_HANDLED();
 			break;
@@ -366,6 +372,10 @@ QState Synth::Paraphonic(Synth * const me, QEvt const * const e) {
 			Evt *evt = new FPGASetEnableReq(SUB0 | SUB1 | SUB2 | NOISE_EN);
 			QF::PUBLISH(evt, me);
 			
+			//disable portamento
+			evt = new FPGASetPortamentoReq(0);
+			QF::PUBLISH(evt, me);
+			
 			status = Q_HANDLED();
 			break;
 		}
@@ -392,6 +402,7 @@ QState Synth::Paraphonic(Synth * const me, QEvt const * const e) {
 				//block certain CCs in paraphonic mode
 				struct CC_ARG *arg = &me->cc_args[req.getCC()];
 				switch(arg->type){
+					case GLIDE_TIME:
 					case WT_TRANSPOSE:
 						break;
 					case WT_WAVE:
@@ -442,7 +453,7 @@ QState Synth::LoadingPreset(Synth * const me, QEvt const * const e) {
 			me->resetDefaults();
 			
 			char num[3];
-			itoa(me->cc_log[PRESET_LOAD_SELECT_CC].values[0], num, 10);
+			itoa(me->cc_log[CC_PRESET_LOAD_SELECT].values[0], num, 10);
 			const char *pnum = (const char *)num;
 			
 			char path[25];
@@ -535,7 +546,7 @@ QState Synth::StoringPreset(Synth * const me, QEvt const * const e) {
 			Q_ASSERT(SD_READ_MAX % (NUM_CHANNELS + 1) == 0);
 			
 			char num[3];
-			itoa(me->cc_log[PRESET_STORE_SELECT_CC].values[0], num, 10);
+			itoa(me->cc_log[CC_PRESET_STORE_SELECT].values[0], num, 10);
 			const char *pnum = (const char *)num;
 			
 			char path[25];
@@ -548,7 +559,7 @@ QState Synth::StoringPreset(Synth * const me, QEvt const * const e) {
 			while(!me->SDBuffer.empty()){ me->SDBuffer.pop_front(); }
 			
 			// 124 - 127 are reserved for loading and storing presets
-			while(!me->SDBuffer.full() && me->ccStoreNum < PRESET_LOAD_SELECT_CC){
+			while(!me->SDBuffer.full() && me->ccStoreNum < CC_PRESET_LOAD_SELECT){
 				
 				//only write CCs that are actually active
 				if(me->cc[me->ccStoreNum] != NULL){
@@ -594,7 +605,7 @@ QState Synth::StoringPreset(Synth * const me, QEvt const * const e) {
 			SDWriteFileResponse const &req = static_cast<SDWriteFileResponse const &>(*e);
 			if(req.getBuf() == &me->SDBuffer){
 				// 124 - 127 are reserved for loading and storing presets
-				while(!me->SDBuffer.full() && me->ccStoreNum < PRESET_LOAD_SELECT_CC){
+				while(!me->SDBuffer.full() && me->ccStoreNum < CC_PRESET_LOAD_SELECT){
 					
 					//only write CCs that are actually active
 					if(me->cc[me->ccStoreNum] != NULL){
@@ -977,7 +988,7 @@ void Synth::setControlHandler(byte number, ccType_t type, byte *args, int count)
 			/* set a default waveform */
 			cc[number] = &Synth::cc_LFO_wave;
 			break;
-		case CC_LFO_TARGET:
+		case CC_TYPE_LFO_TARGET:
 			/* set a default waveform */
 			cc[number] = &Synth::cc_LFO_target;
 			break;
@@ -1008,7 +1019,7 @@ void Synth::setControlHandler(byte number, ccType_t type, byte *args, int count)
 //*********** CC PROCESSOR FUNCTIONS *****************//
 void Synth::cc_LFO_rate(byte channel, byte value, struct CC_ARG *args){
 	if(channel <= NUM_LFO){
-		lfos[channel - 1].setRate(map(value, 0, 127, 0, 20 * LFO_NUM_VALUES));
+		lfos[channel - 1].setRate(value);
 	}
 }
 

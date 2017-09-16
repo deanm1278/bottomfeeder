@@ -11,7 +11,7 @@
 #include "hsm_id.h"
 
 #define SPI_SS_B        A0
-#define WAVEFORMS_OFFSET (uint32_t)140288
+#define WAVEFORMS_OFFSET (uint32_t)144384 
 #define WAVEFORM_SIZE 2048
 
 #define  SIGN_BIT 0x8000

@@ -72,9 +72,11 @@ QState System::InitialPseudoState(System * const me, QEvt const * const e) {
 	
 	me->subscribe(SYNTH_START_CFM);
 	me->subscribe(SYNTH_STOP_CFM);
-	
+
+#ifdef CONFIG_MIDI_USB	
 	me->subscribe(MIDI_USB_START_CFM);
 	me->subscribe(MIDI_USB_STOP_CFM);
+#endif
 	
 	me->subscribe(SD_START_CFM);
 	me->subscribe(SD_STOP_CFM);
@@ -152,15 +154,16 @@ QState System::Stopping(System * const me, QEvt const * const e) {
 		case Q_ENTRY_SIG: {
 			LOG_EVENT(e);
 			me->m_cfmCount = 0;
+			Evt *evt;
 			
-			Evt *evt = new FPGAStopReq(me->m_nextSequence++);
+			evt = new FPGAStopReq(me->m_nextSequence++);
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
 			
 			evt = new SDStopReq(me->m_nextSequence++);
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
-			
+		
 			evt = new MIDIUARTStopReq(me->m_nextSequence++);
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
@@ -169,10 +172,12 @@ QState System::Stopping(System * const me, QEvt const * const e) {
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
 			
+#ifdef CONFIG_MIDI_USB	
 			evt = new MIDIUSBStopReq(me->m_nextSequence++);
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
-			
+#endif
+
 			evt = new SynthStopReq(me->m_nextSequence++);
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
@@ -192,7 +197,7 @@ QState System::Stopping(System * const me, QEvt const * const e) {
 		case SYNTH_STOP_CFM:
 		case MIDI_UART_STOP_CFM: {
 			LOG_EVENT(e);
-			me->HandleCfm(ERROR_EVT_CAST(*e), 6);
+			me->HandleCfm(ERROR_EVT_CAST(*e), NUM_AO);
 			status = Q_HANDLED();
 			break;
 		}
@@ -219,37 +224,12 @@ QState System::Starting(System * const me, QEvt const * const e) {
 	switch (e->sig) {
 		case Q_ENTRY_SIG: {
 			LOG_EVENT(e);
-			/* TODO: startup timeout
-			uint32_t timeout = SystemStartReq::TIMEOUT_MS / 2;
-			Q_ASSERT(timeout > UserLedStartReq::TIMEOUT_MS);
-			Q_ASSERT(timeout > UserBtnStartReq::TIMEOUT_MS);
-			Q_ASSERT(timeout > UserSimStartReq::TIMEOUT_MS);
-			Q_ASSERT(timeout > WashStartReq::TIMEOUT_MS);
-			me->m_stateTimer.armX(timeout);*/
+
 			me->m_cfmCount = 0;
+			Evt *evt;
 			
 			//MUST START FPGA FIRST, BEFORE WE HIJACK THE SPI BUS
-			Evt *evt = new FPGAStartReq(me->m_nextSequence++);
-			// TODO - Save sequence number for comparison.
-			QF::PUBLISH(evt, me);
-			
-			evt = new SDStartReq(me->m_nextSequence++);
-			// TODO - Save sequence number for comparison.
-			QF::PUBLISH(evt, me);
-			
-			evt = new MIDIUARTStartReq(me->m_nextSequence++);
-			// TODO - Save sequence number for comparison.
-			QF::PUBLISH(evt, me);
-			
-			evt = new FlashConfigStartReq(me->m_nextSequence++);
-			// TODO - Save sequence number for comparison.
-			QF::PUBLISH(evt, me);
-			
-			evt = new MIDIUSBStartReq(me->m_nextSequence++);
-			// TODO - Save sequence number for comparison.
-			QF::PUBLISH(evt, me);
-			
-			evt = new SynthStartReq(me->m_nextSequence++);
+			evt = new FPGAStartReq(me->m_nextSequence++);
 			// TODO - Save sequence number for comparison.
 			QF::PUBLISH(evt, me);
 
@@ -262,34 +242,50 @@ QState System::Starting(System * const me, QEvt const * const e) {
 			status = Q_HANDLED();
 			break;
 		}
-		case FPGA_START_CFM:
+		case FPGA_START_CFM:{
+			Evt *evt;
+			evt = new SDStartReq(me->m_nextSequence++);
+			// TODO - Save sequence number for comparison.
+			QF::PUBLISH(evt, me);
+			
+			me->HandleCfm(ERROR_EVT_CAST(*e), NUM_AO);
+			status = Q_HANDLED();
+			break;
+		}
+		case SD_START_CFM:{
+			Evt *evt;
+			evt = new MIDIUARTStartReq(me->m_nextSequence++);
+			// TODO - Save sequence number for comparison.
+			QF::PUBLISH(evt, me);
+			
+			evt = new FlashConfigStartReq(me->m_nextSequence++);
+			// TODO - Save sequence number for comparison.
+			QF::PUBLISH(evt, me);
+
+#ifdef CONFIG_MIDI_USB			
+			evt = new MIDIUSBStartReq(me->m_nextSequence++);
+			// TODO - Save sequence number for comparison.
+			QF::PUBLISH(evt, me);
+#endif
+
+			evt = new SynthStartReq(me->m_nextSequence++);
+			// TODO - Save sequence number for comparison.
+			QF::PUBLISH(evt, me);
+			
+			me->HandleCfm(ERROR_EVT_CAST(*e), NUM_AO);
+			status = Q_HANDLED();
+			break;
+		}
 		case FLASH_CONFIG_START_CFM:
-		case SD_START_CFM:
 		case MIDI_USB_START_CFM:
 		case SYNTH_START_CFM:
 		case MIDI_UART_START_CFM: {
 			LOG_EVENT(e);
-			me->HandleCfm(ERROR_EVT_CAST(*e), 6);
+			me->HandleCfm(ERROR_EVT_CAST(*e), NUM_AO);
 			status = Q_HANDLED();
 			break;
 		}
 		case SYSTEM_FAIL:
-		/*
-		case SYSTEM_STATE_TIMER: {
-			LOG_EVENT(e);
-			Evt *evt;
-			if (e->sig == SYSTEM_FAIL) {
-				ErrorEvt const &fail = ERROR_EVT_CAST(*e);
-				evt = new SystemStartCfm(me->m_savedInSeq,
-				fail.GetError(), fail.GetReason());
-				} else {
-				evt = new SystemStartCfm(me->m_savedInSeq, ERROR_TIMEOUT);
-			}
-			QF::PUBLISH(evt, me);
-			status = Q_TRAN(&System::Stopping2);
-			break;
-		}
-		*/
 		case SYSTEM_DONE: {
 			LOG_EVENT(e);
 			Evt *evt = new SystemStartCfm(me->m_savedInSeq, ERROR_SUCCESS);
@@ -315,104 +311,109 @@ QState System::Started(System * const me, QEvt const * const e) {
 			//************* OSCILLATORS **********//
 			Evt *evt;
 			
-			evt = new synthSetCCHandler(26, WT_WAVE, NULL, 0);
+			evt = new synthSetCCHandler(CC_WT_WAVE, WT_WAVE, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
-			evt = new synthSetCCHandler(6, WT_TRANSPOSE, NULL, 0);
+			evt = new synthSetCCHandler(CC_WT_TRANSPOSE, WT_TRANSPOSE, NULL, 0);
 			QF::PUBLISH(evt, me);
-			evt = new synthSetCCHandler(2, WT_TUNE, NULL, 0);
+			evt = new synthSetCCHandler(CC_WT_TUNE, WT_TUNE, NULL, 0);
 			QF::PUBLISH(evt, me);
-			evt = new synthSetCCHandler(27, WT_VOLUME, NULL, 0);
+			evt = new synthSetCCHandler(CC_WT_VOLUME, WT_VOLUME, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
-			evt = new synthSetCCHandler(9, GLIDE_TIME, NULL, 0);
+			evt = new synthSetCCHandler(CC_GLIDE_TIME, GLIDE_TIME, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
 			//********** FILTER ****************//
 			
 			int pwm = CUTOFF;
-			evt = new synthSetCCHandler(74, CV, &(reinterpret_cast<byte&>(pwm)), sizeof(int));
+			evt = new synthSetCCHandler(CC_CUTOFF, CV, &(reinterpret_cast<byte&>(pwm)), sizeof(int));
 			QF::PUBLISH(evt, me);
 			
 			pwm = RESONANCE;
-			evt = new synthSetCCHandler(71, CV, &(reinterpret_cast<byte&>(pwm)), sizeof(int));
+			evt = new synthSetCCHandler(CC_RESONANCE, CV, &(reinterpret_cast<byte&>(pwm)), sizeof(int));
 			QF::PUBLISH(evt, me);
 			
 			//************ ENV ***************//
 			
 			int param = ATTACK;
-			evt = new synthSetCCHandler(73, ENV, &(reinterpret_cast<byte&>(param)), sizeof(int));
+			evt = new synthSetCCHandler(CC_ATTACK, ENV, &(reinterpret_cast<byte&>(param)), sizeof(int));
 			QF::PUBLISH(evt, me);
 			
 			param = DECAY;
-			evt = new synthSetCCHandler(15, ENV, &(reinterpret_cast<byte&>(param)), sizeof(int));
+			evt = new synthSetCCHandler(CC_DECAY, ENV, &(reinterpret_cast<byte&>(param)), sizeof(int));
 			QF::PUBLISH(evt, me);
 			
 			param = SUSTAIN;
-			evt = new synthSetCCHandler(16, ENV, &(reinterpret_cast<byte&>(param)), sizeof(int));
+			evt = new synthSetCCHandler(CC_SUSTAIN, ENV, &(reinterpret_cast<byte&>(param)), sizeof(int));
 			QF::PUBLISH(evt, me);
 			
 			param = RELEASE;
-			evt = new synthSetCCHandler(72, ENV, &(reinterpret_cast<byte&>(param)), sizeof(int));
+			evt = new synthSetCCHandler(CC_RELEASE, ENV, &(reinterpret_cast<byte&>(param)), sizeof(int));
 			QF::PUBLISH(evt, me);
 			
 			param = CUTOFF_MIX;
-			evt = new synthSetCCHandler(10, ENV, &(reinterpret_cast<byte&>(param)), sizeof(int));
+			evt = new synthSetCCHandler(CC_ENV_CUTOFF_MIX, ENV, &(reinterpret_cast<byte&>(param)), sizeof(int));
 			QF::PUBLISH(evt, me);
 			
 			param = AMP_MIX;
-			evt = new synthSetCCHandler(11, ENV, &(reinterpret_cast<byte&>(param)), sizeof(int));
+			evt = new synthSetCCHandler(CC_ENV_AMP_MIX, ENV, &(reinterpret_cast<byte&>(param)), sizeof(int));
 			QF::PUBLISH(evt, me);
 			
 			//*********** OTHER CV ***********//
 			
 			pwm = AMP;
-			evt = new synthSetCCHandler(7, CV, &(reinterpret_cast<byte&>(pwm)), sizeof(int));
+			evt = new synthSetCCHandler(CC_AMP, CV, &(reinterpret_cast<byte&>(pwm)), sizeof(int));
 			QF::PUBLISH(evt, me);
 			
 			pwm = SUB;
-			evt = new synthSetCCHandler(13, CV, &(reinterpret_cast<byte&>(pwm)), sizeof(int));
+			evt = new synthSetCCHandler(CC_SUB, CV, &(reinterpret_cast<byte&>(pwm)), sizeof(int));
 			QF::PUBLISH(evt, me);
 			
 			pwm = NOISE;
-			evt = new synthSetCCHandler(20, CV, &(reinterpret_cast<byte&>(pwm)), sizeof(int));
+			evt = new synthSetCCHandler(CC_NOISE, CV, &(reinterpret_cast<byte&>(pwm)), sizeof(int));
 			QF::PUBLISH(evt, me);
 			
 			//**************** LFO *************//
 			
-			evt = new synthSetCCHandler(22, LFO_RATE, NULL, 0);
+			evt = new synthSetCCHandler(CC_LFO_RATE, LFO_RATE, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
-			evt = new synthSetCCHandler(23, LFO_DEPTH, NULL, 0);
+			evt = new synthSetCCHandler(CC_LFO_DEPTH, LFO_DEPTH, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
-			evt = new synthSetCCHandler(28, CC_LFO_TARGET, NULL, 0);
+			evt = new synthSetCCHandler(CC_LFO_TARGET, CC_TYPE_LFO_TARGET, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
-			evt = new synthSetCCHandler(29, LFO_WAVE, NULL, 0);
+			evt = new synthSetCCHandler(CC_LFO_WAVE, LFO_WAVE, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
 			//*********************************//
 			
-			evt = new synthSetCCHandler(PARA_MODE_CC, PARA_MODE, NULL, 0);
+			evt = new synthSetCCHandler(CC_PARA_MODE, PARA_MODE, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
 			//********** PRESETS DO NOT CHANGE!! *************//
-			evt = new synthSetCCHandler(PRESET_LOAD_SELECT_CC, PRESET_LOAD_SELECT, NULL, 0);
+			evt = new synthSetCCHandler(CC_PRESET_LOAD_SELECT, PRESET_LOAD_SELECT, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
-			evt = new synthSetCCHandler(PRESET_LOAD_ENTER_CC, PRESET_LOAD_ENTER, NULL, 0);
+			evt = new synthSetCCHandler(CC_PRESET_LOAD_ENTER, PRESET_LOAD_ENTER, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
-			evt = new synthSetCCHandler(PRESET_STORE_SELECT_CC, PRESET_STORE_SELECT, NULL, 0);
+			evt = new synthSetCCHandler(CC_PRESET_STORE_SELECT, PRESET_STORE_SELECT, NULL, 0);
 			QF::PUBLISH(evt, me);
 			
-			evt = new synthSetCCHandler(PRESET_STORE_ENTER_CC, PRESET_STORE_ENTER, NULL, 0);
+			evt = new synthSetCCHandler(CC_PRESET_STORE_ENTER, PRESET_STORE_ENTER, NULL, 0);
 			QF::PUBLISH(evt, me);
-			
+
+#ifndef PANEL_ATTACHED
 			//************* LOAD FIRST PRESET *************//
 			evt = new Evt(SYNTH_LOAD_PRESET_REQ);
 			QF::PUBLISH(evt, me);
+#endif
+			
+			SerialUSB.println("System started!");
+			SerialUSB.print("> ");
 			
             status = Q_HANDLED();
             break;
@@ -427,36 +428,40 @@ QState System::Started(System * const me, QEvt const * const e) {
 			//when the timer goes off, this will get hit. Log the event and publish another event
             LOG_EVENT(e);
 			
-			Evt const &req = EVT_CAST(*e);
-            Evt *evt = new UserLedToggleReq(req.GetSeq());
-            me->postLIFO(evt);
+			digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 			
-			//for testing only
 			if(SerialUSB.available()){
 				char c = SerialUSB.read();
-				if(c == 'f') 
+				if(c == 'f'){
+					SerialUSB.println("Writing firmware... please wait");
 					status = Q_TRAN(&System::WriteFirmware);
+				}
 				
-				else if(c == 'w')
+				else if(c == 'w'){
+					SerialUSB.println("Writing waveforms... please wait");
 					status = Q_TRAN(&System::WriteWaveforms);
+				}
 				
 				else if(c == 'v'){
+					Evt *evt;
 					evt = new FlashConfigVerifyConfigurationReq(FIRMWARE_PATH);
 					QF::PUBLISH(evt, me);
+					SerialUSB.println("verifying firmware... please wait");
 					status = Q_HANDLED();
 				}
 				
-				else status = Q_HANDLED();
+				else{
+					SerialUSB.println("Unrecognized command...");
+					SerialUSB.println("f = write FPGA firmware from SD card");
+					SerialUSB.println("w = write waveforms from SD card");
+					SerialUSB.println("v = verify FPGA configuration");
+					SerialUSB.print("> ");
+					 status = Q_HANDLED();
+				}
 			}
             else status = Q_HANDLED();
             break;
         }
-		case USER_LED_TOGGLE_REQ: {
-			//LOG_EVENT(e); 
-			digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-			status = Q_HANDLED();
-			break;
-		}
         default: {
             status = Q_SUPER(&System::Root);
             break;

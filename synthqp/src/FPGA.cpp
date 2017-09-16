@@ -226,8 +226,8 @@ QState FPGA::Started(FPGA * const me, QEvt const * const e) {
 		case FPGA_SET_PORTAMENTO_REQ:{
 			LOG_EVENT(e);
 			FPGASetPortamentoReq const &req = static_cast<FPGASetPortamentoReq const &>(*e);
-
-			me->writeReg(FPGA_PORT, req.getPrescale());
+			
+			me->writeReg(FPGA_PORT, max(req.getPrescale(), 1));
 			status = Q_HANDLED();
 			break;
 		}
@@ -346,21 +346,23 @@ QState FPGA::WritingWave(FPGA * const me, QEvt const * const e) {
 void FPGA::writeReg(uint8_t reg, uint16_t value){
 	uint16_t Byte1 = FPGA_RW_BIT(1) | FPGA_REG_MASK(reg);
 	
-	QF_CRIT_ENTRY();
+	QF_CRIT_STAT_TYPE crit;
+	QF_CRIT_ENTRY(crit);
 	SPI.beginTransaction (settings);
 	digitalWrite(FPGA_CS, LOW);
 	SPI.transfer16(Byte1);
 	SPI.transfer16(value);
 	digitalWrite(FPGA_CS, HIGH);
 	SPI.endTransaction();
-	QF_CRIT_EXIT();
+	QF_CRIT_EXIT(crit);
 }
 
 uint16_t FPGA::readReg(uint8_t reg){
 	uint16_t Byte1 = FPGA_RW_BIT(0) |FPGA_REG_MASK(reg);
 	uint16_t read;
 	
-	QF_CRIT_ENTRY();
+	QF_CRIT_STAT_TYPE crit;
+	QF_CRIT_ENTRY(crit);
 	SPI.beginTransaction (settings);
 	digitalWrite(FPGA_CS, LOW);
 	SPI.transfer16(Byte1);
@@ -373,7 +375,7 @@ uint16_t FPGA::readReg(uint8_t reg){
 	read = SPI.transfer16(0x00);
 	digitalWrite(FPGA_CS, HIGH);
 	SPI.endTransaction();
-	QF_CRIT_EXIT();
+	QF_CRIT_EXIT(crit);
 	
 	return read;
 }

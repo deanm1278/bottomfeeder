@@ -36,7 +36,7 @@ enum {
 	FLASH_CONFIG,
 	SD_CARD,
 	FPGA_ID,
-	CAP_TOUCH,
+	PANEL,
 	SYNTH,
 	MIDI_USB
 };
@@ -45,14 +45,14 @@ enum {
 // The maximum priority is defined in qf_port.h as QF_MAX_ACTIVE (32)
 enum
 {
-    PRIO_SYSTEM     = 25,
-	PRIO_MIDI_UART  = 26,
-	PRIO_MIDI_USB	= 27,
-	PRIO_FLASH_CONFIG = 29,
+    PRIO_SYSTEM     = 23,
+	PRIO_MIDI_UART  = 25,
+	PRIO_MIDI_USB	= 26,
+	PRIO_FLASH_CONFIG = 28,
 	PRIO_SD_CARD	= 19,
-	PRIO_FPGA		= 28,
-	PRIO_CAP_TOUCH	= 31,
-	PRIO_SYNTH		= 30
+	PRIO_FPGA		= 27,
+	PRIO_PANEL		= 24,
+	PRIO_SYNTH		= 29
 };
 
 
