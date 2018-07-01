@@ -19,4 +19,4 @@ Features include:
 - Loading and saving presets
 - Low cost and small form factor
 
-Some demos here https://www.youtube.com/watch?v=mSbowzdoYs0&list=PL59ZxwFBLROTydRgtpQ5mKHmTjY1HfpDJ (more to be added later)
+demo video here: https://youtu.be/Ub5NRgZzTfE
