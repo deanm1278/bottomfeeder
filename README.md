@@ -1,5 +1,8 @@
 # bottomfeeder
 
+demo video of the synthesizer with a control panel added on top is [here](https://youtu.be/Ub5NRgZzTfE).
+Note the synthesizer is mounted to the back of the panel in the video.
+
 ![Alt text](synth.jpg)
 
 Features include:
@@ -19,4 +22,7 @@ Features include:
 - Loading and saving presets
 - Low cost and small form factor
 
-demo video here: https://youtu.be/Ub5NRgZzTfE
+## Structure
+An ARM Cortex M0+ microcontroller acts as a host processor for an [FPGA-Based synthesizer](https://github.com/deanm1278/Chisel-wavetable).
+The FPGA outputs the oscillators as well as PWM control voltages for the analog filter and analog VCA parameters.
+[Click here](https://github.com/deanm1278/bottomfeeder/blob/master/schematics/synth_revD.pdf) to view PDF schematics.
