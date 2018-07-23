@@ -16,6 +16,7 @@ Features include:
 - Glide rate control
 - 2x LFO (also any user loadable waveform)
   - Mappable to many parameters including rate or depth of the other LFO
+- Headphone output
 - External input to filter
 - All parameters controllable via Standard MIDI
 - Header connections for modification
